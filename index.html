@@ -88,9 +88,11 @@
     </style>
   </head>
   <body>
-    <h1>Visa Bulletin Dashboard</h1>
-    <p id="rangeText" class="note">Loading cached bulletin data…</p>
-    <p class="note">
+    <h1 data-i18n="title">Visa Bulletin Dashboard</h1>
+    <p id="rangeText" class="note" data-i18n="loading">
+      Loading cached bulletin data…
+    </p>
+    <p class="note" data-i18n="note">
       C = Current, U = Unavailable. Chart lines are created for each selected
       visa category and country.
     </p>
@@ -99,16 +101,16 @@
     <div class="layout">
       <main>
         <div class="chart-wrap"><canvas id="visaChart"></canvas></div>
-        <h2>Filtered data</h2>
+        <h2 data-i18n="filteredData">Filtered data</h2>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Bulletin</th>
-                <th>Group</th>
-                <th>Category</th>
-                <th>Country</th>
-                <th>Cutoff</th>
+                <th data-i18n="tableBulletin">Bulletin</th>
+                <th data-i18n="tableGroup">Group</th>
+                <th data-i18n="tableCategory">Category</th>
+                <th data-i18n="tableCountry">Country</th>
+                <th data-i18n="tableCutoff">Cutoff</th>
               </tr>
             </thead>
             <tbody id="dataRows"></tbody>
@@ -118,26 +120,59 @@
 
       <aside class="filters">
         <fieldset>
-          <legend>Month range</legend>
-          <label>Start <select id="startBulletin"></select></label>
-          <label>End <select id="endBulletin"></select></label>
+          <legend data-i18n="language">Language</legend>
+          <label><span data-i18n="languageLabel">Language</span> <select
+              id="languageSelect"
+            >
+              <option value="en">English</option>
+              <option value="vi">Tiếng Việt</option>
+            </select></label>
         </fieldset>
         <fieldset>
-          <legend>Visa categories</legend>
-          <button type="button" data-select="category" data-value="all">
+          <legend data-i18n="monthRange">Month range</legend>
+          <label><span data-i18n="start">Start</span> <select
+              id="startBulletin"
+            >
+            </select></label>
+          <label><span data-i18n="end">End</span> <select id="endBulletin">
+            </select></label>
+        </fieldset>
+        <fieldset>
+          <legend data-i18n="visaCategories">Visa categories</legend>
+          <button
+            type="button"
+            data-select="category"
+            data-value="all"
+            data-i18n="all"
+          >
             All
           </button>
-          <button type="button" data-select="category" data-value="none">
+          <button
+            type="button"
+            data-select="category"
+            data-value="none"
+            data-i18n="none"
+          >
             None
           </button>
           <div id="categoryFilters"></div>
         </fieldset>
         <fieldset>
-          <legend>Countries / chargeability</legend>
-          <button type="button" data-select="country" data-value="all">
+          <legend data-i18n="countries">Countries / chargeability</legend>
+          <button
+            type="button"
+            data-select="country"
+            data-value="all"
+            data-i18n="all"
+          >
             All
           </button>
-          <button type="button" data-select="country" data-value="none">
+          <button
+            type="button"
+            data-select="country"
+            data-value="none"
+            data-i18n="none"
+          >
             None
           </button>
           <div id="countryFilters"></div>
@@ -154,19 +189,138 @@
         "mexico",
         "philippines",
       ];
+      const TRANSLATIONS = {
+        en: {
+          title: "Visa Bulletin Dashboard",
+          loading: "Loading cached bulletin data…",
+          note:
+            "C = Current, U = Unavailable. Chart lines are created for each selected visa category and country.",
+          filteredData: "Filtered data",
+          tableBulletin: "Bulletin",
+          tableGroup: "Group",
+          tableCategory: "Category",
+          tableCountry: "Country",
+          tableCutoff: "Cutoff",
+          language: "Language",
+          languageLabel: "Language",
+          monthRange: "Month range",
+          start: "Start",
+          end: "End",
+          visaCategories: "Visa categories",
+          countries: "Countries / chargeability",
+          all: "All",
+          none: "None",
+          chartTitle: "Visa Bulletin Final Action Date Movement",
+          yAxis: "Priority date cutoff",
+          xAxis: "Visa Bulletin month",
+          rowsSelected: "{rows} rows, {lines} chart lines selected.",
+          cachedRange:
+            "Cached range: {start} through {end}. Generated {generated}.",
+          loadErrorTitle: "Unable to load data",
+          loadErrorHelp:
+            "Run the data fetch task and serve this dashboard over HTTP.",
+          family: "family",
+          employment: "employment",
+          unknown: "unknown",
+        },
+        vi: {
+          title: "Bảng theo dõi Lịch chiếu khán",
+          loading: "Đang tải dữ liệu đã lưu…",
+          note:
+            "C = Đang hiệu lực, U = Không khả dụng. Mỗi đường biểu đồ tương ứng với diện visa và quốc gia đã chọn.",
+          filteredData: "Dữ liệu đã lọc",
+          tableBulletin: "Lịch chiếu khán",
+          tableGroup: "Nhóm",
+          tableCategory: "Diện visa",
+          tableCountry: "Quốc gia",
+          tableCutoff: "Ngày ưu tiên",
+          language: "Ngôn ngữ",
+          languageLabel: "Ngôn ngữ",
+          monthRange: "Khoảng tháng",
+          start: "Bắt đầu",
+          end: "Kết thúc",
+          visaCategories: "Diện visa",
+          countries: "Quốc gia / khu vực tính visa",
+          all: "Tất cả",
+          none: "Bỏ chọn",
+          chartTitle: "Diễn biến ngày ưu tiên trong Lịch chiếu khán",
+          yAxis: "Ngày ưu tiên",
+          xAxis: "Tháng của Lịch chiếu khán",
+          rowsSelected: "Đã chọn {rows} dòng, {lines} đường biểu đồ.",
+          cachedRange:
+            "Dữ liệu đã lưu: từ {start} đến {end}. Cập nhật {generated}.",
+          loadErrorTitle: "Không thể tải dữ liệu",
+          loadErrorHelp:
+            "Hãy chạy tác vụ tải dữ liệu và mở dashboard qua HTTP.",
+          family: "gia đình",
+          employment: "việc làm",
+          unknown: "không rõ",
+        },
+      };
       const AREA_LABELS = {
-        all_chargeability: "All Chargeability Areas Except Those Listed",
-        china: "China-mainland born",
-        india: "India",
-        mexico: "Mexico",
-        philippines: "Philippines",
+        en: {
+          all_chargeability: "All Chargeability Areas Except Those Listed",
+          china: "China-mainland born",
+          india: "India",
+          mexico: "Mexico",
+          philippines: "Philippines",
+        },
+        vi: {
+          all_chargeability:
+            "Tất cả khu vực tính visa trừ các khu vực được liệt kê",
+          china: "Trung Quốc đại lục",
+          india: "Ấn Độ",
+          mexico: "Mexico",
+          philippines: "Philippines",
+        },
       };
       const AREA_SHORT_LABELS = {
-        all_chargeability: "All",
-        china: "China",
-        india: "India",
-        mexico: "Mexico",
-        philippines: "Philippines",
+        en: {
+          all_chargeability: "All",
+          china: "China",
+          india: "India",
+          mexico: "Mexico",
+          philippines: "Philippines",
+        },
+        vi: {
+          all_chargeability: "Tất cả",
+          china: "Trung Quốc",
+          india: "Ấn Độ",
+          mexico: "Mexico",
+          philippines: "Philippines",
+        },
+      };
+      const MONTH_LABELS = {
+        en: [
+          "",
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ],
+        vi: [
+          "",
+          "Tháng 1",
+          "Tháng 2",
+          "Tháng 3",
+          "Tháng 4",
+          "Tháng 5",
+          "Tháng 6",
+          "Tháng 7",
+          "Tháng 8",
+          "Tháng 9",
+          "Tháng 10",
+          "Tháng 11",
+          "Tháng 12",
+        ],
       };
       const MONTH_ABBR = {
         JAN: 1,
@@ -198,6 +352,54 @@
       ];
       let allRows = [];
       let bulletins = [];
+      let currentLanguage = localStorage.getItem("language") || "en";
+      const FILTER_STATE_KEY = "visaBulletinFilterState";
+
+      function t(key, params = {}) {
+        let value = TRANSLATIONS[currentLanguage][key] ||
+          TRANSLATIONS.en[key] || key;
+        for (const [param, replacement] of Object.entries(params)) {
+          value = value.replaceAll("{" + param + "}", replacement);
+        }
+        return value;
+      }
+
+      function localizedBulletinLabel(bulletin) {
+        const [year, month] = bulletin.key.split("-").map(Number);
+        return (MONTH_LABELS[currentLanguage][month] ||
+          MONTH_LABELS.en[month]) + " " + year;
+      }
+
+      function setText(id, text) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = text;
+      }
+
+      function applyLanguage() {
+        document.documentElement.lang = currentLanguage;
+        document.title = t("title");
+        document.querySelectorAll("[data-i18n]").forEach((element) => {
+          element.textContent = t(element.dataset.i18n);
+        });
+        document.querySelectorAll("#startBulletin option, #endBulletin option")
+          .forEach((option) => {
+            const bulletin = bulletins.find((item) =>
+              item.key === option.value
+            );
+            if (bulletin) option.textContent = localizedBulletinLabel(bulletin);
+          });
+        chart.options.plugins.title.text = t("chartTitle");
+        chart.options.scales.y.title.text = t("yAxis");
+        chart.options.scales.x.title.text = t("xAxis");
+        document.querySelectorAll(".country-filter").forEach((input) => {
+          if (input.parentElement?.lastChild) {
+            input.parentElement.lastChild.textContent = " " +
+              (AREA_SHORT_LABELS[currentLanguage][input.value] || input.value);
+          }
+        });
+        updateRangeText();
+        update();
+      }
 
       function categorySortKey(category) {
         return ({
@@ -299,7 +501,7 @@
             group: row.group,
             category: row.category,
             country,
-            countryLabel: AREA_LABELS[country],
+            countryLabel: country,
             cutoff: parseCutoff(row.areas[country]),
           }))
         );
@@ -309,6 +511,7 @@
         const container = document.getElementById(containerId);
         const id = className + "-" + value.replace(/[^a-z0-9]+/gi, "-");
         const wrapper = document.createElement("label");
+        wrapper.dataset.value = value;
         wrapper.innerHTML = '<input type="checkbox" class="' + className +
           '" id="' + id + '" value="' + value.replace(/"/g, "&quot;") + '"' +
           (checked ? " checked" : "") + "> " + label;
@@ -354,6 +557,49 @@
         );
       }
 
+      function setSelectValueIfPresent(selectId, value) {
+        const select = document.getElementById(selectId);
+        if ([...select.options].some((option) => option.value === value)) {
+          select.value = value;
+        }
+      }
+
+      function applyCheckboxValues(className, values) {
+        if (!Array.isArray(values)) return;
+        const selected = new Set(values);
+        document.querySelectorAll("." + className).forEach((input) => {
+          input.checked = selected.has(input.value);
+        });
+      }
+
+      function saveFilterState() {
+        const state = {
+          start: document.getElementById("startBulletin").value,
+          end: document.getElementById("endBulletin").value,
+          categories: [...selectedValues("category-filter")],
+          countries: [...selectedValues("country-filter")],
+        };
+        localStorage.setItem(FILTER_STATE_KEY, JSON.stringify(state));
+      }
+
+      function restoreFilterState() {
+        const raw = localStorage.getItem(FILTER_STATE_KEY);
+        if (!raw) return;
+        try {
+          const state = JSON.parse(raw);
+          if (typeof state.start === "string") {
+            setSelectValueIfPresent("startBulletin", state.start);
+          }
+          if (typeof state.end === "string") {
+            setSelectValueIfPresent("endBulletin", state.end);
+          }
+          applyCheckboxValues("category-filter", state.categories);
+          applyCheckboxValues("country-filter", state.countries);
+        } catch {
+          localStorage.removeItem(FILTER_STATE_KEY);
+        }
+      }
+
       const chart = new Chart(document.getElementById("visaChart"), {
         type: "line",
         data: { labels: [], datasets: [] },
@@ -365,7 +611,7 @@
           plugins: {
             title: {
               display: true,
-              text: "Visa Bulletin Final Action Date Movement",
+              text: t("chartTitle"),
             },
             tooltip: {
               callbacks: {
@@ -377,20 +623,36 @@
           scales: {
             y: {
               ticks: { callback: (value) => ordinalToIso(value) },
-              title: { display: true, text: "Priority date cutoff" },
+              title: { display: true, text: t("yAxis") },
             },
-            x: { title: { display: true, text: "Visa Bulletin month" } },
+            x: { title: { display: true, text: t("xAxis") } },
           },
         },
       });
 
+      function updateRangeText(manifest) {
+        const activeManifest = manifest || window.visaManifest;
+        if (!activeManifest || bulletins.length === 0) return;
+        setText(
+          "rangeText",
+          t("cachedRange", {
+            start: localizedBulletinLabel(bulletins[0]),
+            end: localizedBulletinLabel(bulletins[bulletins.length - 1]),
+            generated: new Date(activeManifest.generatedAt).toLocaleString(
+              currentLanguage === "vi" ? "vi-VN" : undefined,
+            ),
+          }),
+        );
+      }
+
       function update() {
+        saveFilterState();
         const activeBulletins = selectedBulletins();
         const rows = filteredRows();
         const seriesKeys = [
           ...new Set(rows.map((row) => row.category + "|" + row.country)),
         ].sort();
-        chart.data.labels = activeBulletins.map((bulletin) => bulletin.label);
+        chart.data.labels = activeBulletins.map(localizedBulletinLabel);
         chart.data.datasets = seriesKeys.map((seriesKey, index) => {
           const [category, country] = seriesKey.split("|");
           const pointsByBulletin = new Map(
@@ -399,7 +661,8 @@
             ).map((row) => [row.bulletinKey, row.cutoff.ordinal]),
           );
           return {
-            label: category + " / " + (AREA_SHORT_LABELS[country] || country),
+            label: category + " / " +
+              (AREA_SHORT_LABELS[currentLanguage][country] || country),
             data: activeBulletins.map((bulletin) =>
               pointsByBulletin.get(bulletin.key) ?? null
             ),
@@ -410,12 +673,19 @@
           };
         });
         chart.update();
-        document.getElementById("selectionCount").textContent = rows.length +
-          " rows, " + seriesKeys.length + " chart lines selected.";
+        document.getElementById("selectionCount").textContent = t(
+          "rowsSelected",
+          {
+            rows: String(rows.length),
+            lines: String(seriesKeys.length),
+          },
+        );
         document.getElementById("dataRows").innerHTML = rows.map((row) =>
-          '<tr><td><a href="' + row.url + '">' + row.bulletinLabel +
-          "</a></td><td>" + row.group + "</td><td>" + row.category +
-          "</td><td>" + row.countryLabel + "</td><td>" +
+          '<tr><td><a href="' + row.url + '">' +
+          localizedBulletinLabel({ key: row.bulletinKey }) +
+          "</a></td><td>" + t(row.group) + "</td><td>" + row.category +
+          "</td><td>" + AREA_LABELS[currentLanguage][row.country] +
+          "</td><td>" +
           (row.cutoff.iso || row.cutoff.raw) + "</td></tr>"
         ).join("");
       }
@@ -423,26 +693,25 @@
       async function init() {
         try {
           const manifest = await loadManifest();
+          window.visaManifest = manifest;
           bulletins = manifest.months;
           const monthCaches = await Promise.all(
             bulletins.map((month) => loadMonth(month.path)),
           );
           allRows = monthCaches.flatMap(rowsFromMonth);
-          document.getElementById("rangeText").textContent = "Cached range: " +
-            bulletins[0].label + " through " +
-            bulletins[bulletins.length - 1].label + ". Generated " +
-            new Date(manifest.generatedAt).toLocaleString() + ".";
+          document.getElementById("languageSelect").value = currentLanguage;
+          updateRangeText(manifest);
           bulletins.forEach((bulletin, index) => {
             makeOption(
               "startBulletin",
               bulletin.key,
-              bulletin.label,
+              localizedBulletinLabel(bulletin),
               index === 0,
             );
             makeOption(
               "endBulletin",
               bulletin.key,
-              bulletin.label,
+              localizedBulletinLabel(bulletin),
               index === bulletins.length - 1,
             );
           });
@@ -462,12 +731,23 @@
               "countryFilters",
               "country-filter",
               country,
-              AREA_SHORT_LABELS[country] || country,
+              AREA_SHORT_LABELS[currentLanguage][country] || country,
               true,
             )
           );
-          document.querySelectorAll('input[type="checkbox"], select').forEach(
+          restoreFilterState();
+          document.querySelectorAll(
+            'input[type="checkbox"], #startBulletin, #endBulletin',
+          ).forEach(
             (input) => input.addEventListener("change", update),
+          );
+          document.getElementById("languageSelect").addEventListener(
+            "change",
+            (event) => {
+              currentLanguage = event.target.value;
+              localStorage.setItem("language", currentLanguage);
+              applyLanguage();
+            },
           );
           document.querySelectorAll("button[data-select]").forEach((button) =>
             button.addEventListener("click", () => {
@@ -481,11 +761,11 @@
               update();
             })
           );
-          update();
+          applyLanguage();
         } catch (error) {
-          document.getElementById("errors").innerHTML =
-            "<h2>Unable to load cache</h2><p>" + error.message +
-            "</p><p>Run the data fetch task and serve this dashboard over HTTP.</p>";
+          document.getElementById("errors").innerHTML = "<h2>" +
+            t("loadErrorTitle") + "</h2><p>" + error.message +
+            "</p><p>" + t("loadErrorHelp") + "</p>";
         }
       }
 

@@ -100,6 +100,8 @@ data/{YYYY-MM}.json
 
 - Chart and data table on the left
 - Filter panel on the right
+- English/Vietnamese language switcher
+- Persisted filter panel state via browser local storage
 - Dynamic month-year start/end selectors
 - Visa category checkboxes
 - Country/chargeability checkboxes
