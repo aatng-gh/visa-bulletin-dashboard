@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "solid-js": "^1.9.10",
+    "vite": "^7.1.12",
+    "vite-plugin-solid": "^2.11.8"
+  }
+}

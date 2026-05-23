@@ -2,10 +2,11 @@
 
 ## Architecture
 
-This project is a **build-time scraper + static client-side dashboard**.
+This project is a **build-time scraper + statically built SolidJS dashboard**.
 
 - The fetch task generates parsed JSON data files locally or in CI.
-- The dashboard is a static `index.html` shell served by GitHub Pages.
+- The dashboard source lives under `src/` and is bundled by Vite.
+- The built dashboard is served by GitHub Pages as static files.
 - The dashboard loads JSON files in the browser and filters/charts them
   client-side.
 - The dashboard is not rebuilt to change filters or date ranges.
@@ -65,16 +66,19 @@ deno task fetch -- --start 2025-06 --end 2026-06
 deno task serve
 deno task check
 deno task lint
+deno task build
+deno task preview
 ```
 
-`deno task build` is an alias for `fetch`.
+`deno task build` fetches missing data and builds the Vite/SolidJS dashboard to
+`dist/`.
 
 ## GitHub Pages
 
-Serve from repo root. Main page:
+Serve the generated Pages artifact. Main built page:
 
 ```text
-index.html
+dist/index.html
 ```
 
 For local development, run:
@@ -89,7 +93,7 @@ Then open:
 http://localhost:8000/
 ```
 
-The page loads:
+The Vite dev server serves the app and local cached data files. The page loads:
 
 ```text
 data/manifest.json
@@ -140,6 +144,6 @@ Monthly workflow:
 .github/workflows/monthly-build.yml
 ```
 
-It runs check, lint, fetches missing data, builds a Pages artifact containing
-`index.html` and generated `data/*.json`, then deploys to GitHub Pages. It does
-not commit generated data to the repo.
+It runs check, lint, fetches missing data, builds the SolidJS dashboard, creates
+a Pages artifact containing `dist/` and generated `data/*.json`, then deploys to
+GitHub Pages. It does not commit generated data to the repo.

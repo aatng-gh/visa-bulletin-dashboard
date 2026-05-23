@@ -1,0 +1,81 @@
+body {
+  font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 2rem;
+  color: #111827;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 360px);
+  gap: 1.5rem;
+  align-items: start;
+}
+.filters {
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #f9fafb;
+  position: sticky;
+  top: 1rem;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+legend {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+label {
+  display: block;
+  margin: 0.25rem 0;
+}
+button {
+  margin: 0.15rem 0.25rem 0.5rem 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0.4rem;
+  background: white;
+  cursor: pointer;
+}
+.chart-wrap {
+  height: 560px;
+  margin-bottom: 2rem;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.86rem;
+}
+th,
+td {
+  border: 1px solid #d1d5db;
+  padding: 0.45rem;
+  text-align: left;
+}
+th {
+  background: #f3f4f6;
+  position: sticky;
+  top: 0;
+}
+.note,
+.count {
+  color: #4b5563;
+}
+.errors {
+  color: #991b1b;
+}
+.table-wrap {
+  max-height: 650px;
+  overflow: auto;
+  border: 1px solid #d1d5db;
+}
+@media (max-width: 850px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .filters {
+    position: static;
+  }
+}

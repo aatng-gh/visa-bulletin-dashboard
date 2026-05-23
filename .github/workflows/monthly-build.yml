@@ -37,14 +37,14 @@ jobs:
       - name: Lint
         run: deno task lint
 
-      - name: Fetch monthly data
-        run: deno task fetch
+      - name: Build dashboard and fetch monthly data
+        run: deno task build
 
       - name: Prepare Pages artifact
         run: |
           rm -rf site
           mkdir -p site/data
-          cp index.html site/index.html
+          cp -R dist/. site/
           cp data/*.json site/data/
 
       - name: Configure Pages

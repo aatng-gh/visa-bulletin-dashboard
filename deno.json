@@ -1,18 +1,25 @@
 {
+  "nodeModulesDir": "auto",
   "imports": {
-    "node-html-parser": "npm:node-html-parser@7.1.0"
+    "chart.js/auto": "npm:chart.js@4.5.0/auto",
+    "node-html-parser": "npm:node-html-parser@7.1.0",
+    "solid-js": "npm:solid-js@1.9.10",
+    "solid-js/web": "npm:solid-js@1.9.10/web",
+    "vite": "npm:vite@7.1.12",
+    "vite-plugin-solid": "npm:vite-plugin-solid@2.11.8"
   },
   "tasks": {
-    "check": "deno check fetch_visa_bulletin_data.ts",
-    "lint": "deno lint fetch_visa_bulletin_data.ts",
+    "check": "deno check fetch_visa_bulletin_data.ts src/main.tsx vite.config.ts",
+    "lint": "deno lint fetch_visa_bulletin_data.ts src vite.config.ts",
     "fetch": "deno run --allow-net=travel.state.gov --allow-read=data --allow-write=data fetch_visa_bulletin_data.ts",
-    "serve": "deno run --allow-net --allow-read jsr:@std/http@1.1.0/file-server . --port 8000",
-    "build": "deno task fetch"
+    "serve": "deno run -A npm:vite@7.1.12 --host 0.0.0.0 --port 8000",
+    "build": "deno task fetch && deno run -A npm:vite@7.1.12 build",
+    "preview": "deno run -A npm:vite@7.1.12 preview --host 0.0.0.0 --port 8000"
   },
   "lint": {
-    "include": ["fetch_visa_bulletin_data.ts"]
+    "include": ["fetch_visa_bulletin_data.ts", "src", "vite.config.ts"]
   },
   "fmt": {
-    "include": ["fetch_visa_bulletin_data.ts", "index.html"]
+    "include": ["fetch_visa_bulletin_data.ts", "index.html", "src", "vite.config.ts", "tsconfig.json", "package.json"]
   }
 }
