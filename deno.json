@@ -1,0 +1,18 @@
+{
+  "imports": {
+    "node-html-parser": "npm:node-html-parser@7.1.0"
+  },
+  "tasks": {
+    "check": "deno check fetch_visa_bulletin_data.ts",
+    "lint": "deno lint fetch_visa_bulletin_data.ts",
+    "fetch": "deno run --allow-net=travel.state.gov --allow-read=data --allow-write=data fetch_visa_bulletin_data.ts",
+    "serve": "deno run --allow-net --allow-read jsr:@std/http@1.1.0/file-server . --port 8000",
+    "build": "deno task fetch"
+  },
+  "lint": {
+    "include": ["fetch_visa_bulletin_data.ts"]
+  },
+  "fmt": {
+    "include": ["fetch_visa_bulletin_data.ts", "index.html"]
+  }
+}
