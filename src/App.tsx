@@ -7,7 +7,7 @@ import {
   AREA_ORDER,
   bulletinKey,
   categorySortKey,
-  DATE_LOCALES,
+  formatGeneratedAt,
   isLanguage,
   LANGUAGES,
   Language,
@@ -173,7 +173,7 @@ export function App() {
     return t("cachedRange", {
       start: localizedBulletinLabel(language, data.bulletins[0]),
       end: localizedBulletinLabel(language, data.bulletins[data.bulletins.length - 1]),
-      generated: new Date(data.manifest.generatedAt).toLocaleString(DATE_LOCALES[language]),
+      generated: formatGeneratedAt(language, data.manifest.generatedAt),
     });
   }, [data, language, t]);
 

@@ -3,6 +3,7 @@ export default {
   name: "Tiếng Việt",
   shortName: "VI",
   flag: "🇻🇳",
+  dateLocale: "vi-VN",
   translations: {
     title: "Bảng theo dõi Lịch chiếu khán",
     loading: "Đang tải dữ liệu đã lưu…",
@@ -36,6 +37,9 @@ export default {
     family: "gia đình",
     employment: "việc làm",
     unknown: "không rõ",
+    cutoffCurrent: "Đang hiệu lực",
+    cutoffUnavailable: "Không khả dụng",
+    cutoffUnknown: "Không rõ",
   },
   areaLabels: {
     all_chargeability: "Tất cả khu vực tính visa trừ các khu vực được liệt kê",

@@ -12,7 +12,7 @@ export {
   MONTH_SHORT_LABELS,
   translate,
 } from "../locales/index";
-import { type Language, MONTH_LABELS, MONTH_SHORT_LABELS } from "../locales/index";
+import { type Language, DATE_LOCALES, MONTH_LABELS, MONTH_SHORT_LABELS, translate } from "../locales/index";
 export type CutoffKind = "current" | "unavailable" | "unknown" | "date";
 
 export interface ManifestMonth {
@@ -183,6 +183,52 @@ export function ordinalToIso(value: number | null | undefined) {
   const epochOrdinal = 719163;
   if (value === null || value === undefined || value < epochOrdinal) return "";
   return new Date((value - epochOrdinal) * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * Returns a human-friendly, locale-aware display string for a cutoff value.
+ * Prefers the parsed ISO date for actual dates; uses translated labels for
+ * Current / Unavailable / Unknown. Used to unify presentation in tables.
+ */
+export function formatCutoffForDisplay(language: Language, cutoff: Cutoff): string {
+  switch (cutoff.kind) {
+    case "current":
+      return translate(language, "cutoffCurrent");
+    case "unavailable":
+      return translate(language, "cutoffUnavailable");
+    case "date":
+      return cutoff.iso ?? cutoff.raw;
+    case "unknown":
+    default:
+      return translate(language, "cutoffUnknown");
+  }
+}
+
+/**
+ * Formats the manifest generatedAt timestamp into a polished, short,
+ * locale-aware string (e.g. "May 23, 2026, 2:30 PM").
+ * Uses DATE_LOCALES for proper Intl formatting per language.
+ */
+export function formatGeneratedAt(language: Language, generatedAt: string): string {
+  try {
+    const date = new Date(generatedAt);
+    if (Number.isNaN(date.getTime())) {
+      return generatedAt;
+    }
+    const locale = DATE_LOCALES[language];
+    const dateStr = date.toLocaleDateString(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const timeStr = date.toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    return `${dateStr}, ${timeStr}`;
+  } catch {
+    return generatedAt;
+  }
 }
 
 function parseCutoff(value: string): Cutoff {

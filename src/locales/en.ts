@@ -3,6 +3,7 @@ export default {
   name: "English",
   shortName: "EN",
   flag: "🇺🇸",
+  dateLocale: "en-US",
   translations: {
     title: "Visa Bulletin Dashboard",
     loading: "Loading cached bulletin data…",
@@ -36,6 +37,9 @@ export default {
     family: "family",
     employment: "employment",
     unknown: "unknown",
+    cutoffCurrent: "Current",
+    cutoffUnavailable: "Unavailable",
+    cutoffUnknown: "Unknown",
   },
   areaLabels: {
     all_chargeability: "All Chargeability Areas Except Those Listed",

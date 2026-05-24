@@ -37,6 +37,9 @@ export default {
     family: "fanmi",
     employment: "travay",
     unknown: "enkoni",
+    cutoffCurrent: "Kouran",
+    cutoffUnavailable: "Pa disponib",
+    cutoffUnknown: "Enkoni",
   },
   areaLabels: {
     all_chargeability: "Tout zòn chajabilite eksepte sa yo ki nan lis la",
