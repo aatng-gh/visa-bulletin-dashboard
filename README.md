@@ -1,6 +1,16 @@
 # Visa Bulletin Dashboard
 
-Modern React + Vite dashboard for exploring USCIS Visa Bulletin data (2005–present).
+A modern, statically built React dashboard for exploring U.S. Visa Bulletin data (2005–present).
+
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live-blue)](https://aatng-gh.github.io/visa-bulletin-dashboard/)
+
+## Features
+
+- Client-side filtering, sorting, and Chart.js visualization
+- Full 3-language support (English, Vietnamese, Haitian Creole)
+- Persisted filter state in localStorage
+- Dynamic month/year range selection
+- Fully static export suitable for GitHub Pages
 
 ## Quick Start
 
@@ -11,19 +21,40 @@ pnpm dev
 
 Open http://localhost:8000/
 
-See [PLAN.md](./PLAN.md) for architecture, data source details, full commands (`pnpm data`, `pnpm build`, etc.), and GitHub Pages deployment notes.
+## Available Scripts
 
-## Key Features
+| Command              | Description |
+|----------------------|-------------|
+| `pnpm dev`           | Start Vite dev server |
+| `pnpm build`         | Build for production (`dist/`) |
+| `pnpm preview`       | Preview production build |
+| `pnpm data`          | Fetch/update visa bulletin JSON data |
+| `pnpm data -- --start 2025-01 --end 2025-06` | Fetch specific date range |
+| `pnpm check`         | Type check + lint |
+| `pnpm format`        | Format with Prettier |
 
-- Client-side filtering and Chart.js visualization
-- 3-language support (English, Vietnamese, Haitian Creole)
-- Persisted filter state
-- Fully static export for GitHub Pages
+> **Note:** `pnpm data` requires Node.js >= 26 (uses native TypeScript support).
 
 ## Data
 
-Run `pnpm data` (or with `--start`/`--end`) to fetch/update the JSON cache from travel.state.gov.
+The dashboard consumes pre-generated JSON files located in `data/`.
+
+Run `pnpm data` (or with `--start` / `--end`) to fetch the latest bulletins from the U.S. Department of State.
+
+See [PLAN.md](./PLAN.md) for:
+- Detailed architecture
+- Data source & fiscal year rules
+- File naming conventions
+- GitHub Actions monthly build process
+- Full data fetching behavior
+
+## Tech Stack
+
+- **Frontend**: React 19 + Vite + TypeScript + Tailwind CSS v4
+- **Charts**: Chart.js
+- **Data Fetching**: Custom Node script with retries, concurrency control, and structured logging
+- **Deployment**: GitHub Pages (static export)
 
 ## License
 
-See repository for details.
+See the repository for details.

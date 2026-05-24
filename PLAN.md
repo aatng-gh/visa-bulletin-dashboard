@@ -1,4 +1,4 @@
-# USCIS Tracker Plan
+# Visa Bulletin Dashboard Plan
 
 ## Architecture
 
@@ -18,6 +18,13 @@ This project is a **build-time scraper + statically built React dashboard**.
 - Locale modules use BCP-47-ish language codes under `src/locales/`.
 - Node scripts live in `scripts/` and use kebab-case filenames.
 - Cached bulletin files use `data/YYYY-MM.json`.
+
+## UI Components
+
+The dashboard uses a small set of lightweight, shadcn-inspired primitives under
+`src/components/ui/`. These are intentionally minimal wrappers around native
+elements (using `cn()` for class merging and `class-variance-authority` only
+where variants are needed). They are **not** full shadcn/ui ports.
 
 ## Data Range
 
@@ -77,9 +84,9 @@ pnpm build
 pnpm preview
 ```
 
-`pnpm data` fetches missing data (uses Node >=26 native TS support via
-`--experimental-strip-types`). `pnpm build` only builds the Vite/React
-dashboard to `dist/`.
+`pnpm data` fetches missing data (requires **Node.js >= 26** for native
+TypeScript execution via `--experimental-strip-types`). `pnpm build` only
+builds the Vite/React dashboard to `dist/`.
 
 ## GitHub Pages
 
