@@ -70,7 +70,7 @@ export default {
     tooltipEB4CertainReligiousWorkers: "EB-4 Certain Religious Workers: Non-profit religious organization workers",
     tooltipEB5Unreserved: "EB-5 Unreserved: Immigrant investors (general category)",
     tooltipEB5SetAsideRural: "EB-5 Rural: Set-aside visas for rural area investments",
-    tooltipEB5SetAsideHighUnemployment: "EB-5 High Unemployment: Set-aside for targeted high-unemp. areas",
+    tooltipEB5SetAsideHighUnemployment: "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
     tooltipEB5SetAsideInfrastructure: "EB-5 Infrastructure: Set-aside for infrastructure projects",
   },
   areaLabels: {

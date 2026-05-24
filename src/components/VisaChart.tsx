@@ -8,6 +8,7 @@ import {
   ordinalToIso,
   VisaRow,
 } from "../lib/visa";
+import { isDarkMode, type ThemeMode } from "../lib/theme";
 
 const colors = [
   "#2563eb",
@@ -34,7 +35,7 @@ interface VisaChartProps {
   activeBulletins: ManifestMonth[];
   rows: VisaRow[];
   language: Language;
-  themeMode: "light" | "dark" | "system";
+  themeMode: ThemeMode;
   t: (key: string, params?: Record<string, string>) => string;
 }
 
@@ -144,9 +145,7 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
       chart.options.scales.x.title.text = t("xAxis");
     }
     // Theme-aware grid lines + text colors for polished dark mode on canvas
-    const isDark =
-      themeMode === "dark" ||
-      (themeMode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const isDark = isDarkMode(themeMode);
     const yGridColor = isDark ? "rgba(148, 163, 184, 0.15)" : "rgba(148, 163, 184, 0.25)";
     const xGridColor = isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(148, 163, 184, 0.18)";
     if (chart.options.scales?.y?.grid) {
@@ -179,6 +178,18 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
     if (chart.options.scales?.x?.title) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (chart.options.scales.x.title as any).color = textColor;
+    }
+
+    // Theme the tooltip for better dark mode experience
+    if (chart.options.plugins?.tooltip) {
+      chart.options.plugins.tooltip.backgroundColor = isDark
+        ? "rgba(30, 41, 59, 0.95)"
+        : "rgba(255, 255, 255, 0.95)";
+      chart.options.plugins.tooltip.titleColor = textColor;
+      chart.options.plugins.tooltip.bodyColor = textColor;
+      chart.options.plugins.tooltip.borderColor = isDark
+        ? "rgba(148, 163, 184, 0.25)"
+        : "rgba(148, 163, 184, 0.35)";
     }
 
     chart.update();
