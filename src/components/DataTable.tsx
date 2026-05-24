@@ -1,5 +1,5 @@
-import { For } from "solid-js";
-import { AREA_LABELS, Language, VisaRow } from "../lib/visa.ts";
+import { AREA_LABELS, Language, VisaRow } from "../lib/visa";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 interface DataTableProps {
   rows: VisaRow[];
@@ -10,33 +10,39 @@ interface DataTableProps {
 
 export function DataTable(props: DataTableProps) {
   return (
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>{props.t("tableBulletin")}</th>
-            <th>{props.t("tableGroup")}</th>
-            <th>{props.t("tableCategory")}</th>
-            <th>{props.t("tableCountry")}</th>
-            <th>{props.t("tableCutoff")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <For each={props.rows}>
-            {(row) => (
-              <tr>
-                <td>
+    <div className="max-h-[650px] overflow-auto rounded-md border">
+      <Table>
+        <TableHeader className="sticky top-0 z-10 bg-muted">
+          <TableRow>
+            <TableHead>{props.t("tableBulletin")}</TableHead>
+            <TableHead>{props.t("tableGroup")}</TableHead>
+            <TableHead>{props.t("tableCategory")}</TableHead>
+            <TableHead>{props.t("tableCountry")}</TableHead>
+            <TableHead>{props.t("tableCutoff")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {props.rows.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                {props.t("noDataSelected")}
+              </TableCell>
+            </TableRow>
+          ) : (
+            props.rows.map((row) => (
+              <TableRow key={`${row.bulletinKey}-${row.category}-${row.country}`}>
+                <TableCell>
                   <a href={row.url}>{props.bulletinLabel(row.bulletinKey)}</a>
-                </td>
-                <td>{props.t(row.group)}</td>
-                <td>{row.category}</td>
-                <td>{AREA_LABELS[props.language][row.country]}</td>
-                <td>{row.cutoff.iso ?? row.cutoff.raw}</td>
-              </tr>
-            )}
-          </For>
-        </tbody>
-      </table>
+                </TableCell>
+                <TableCell>{props.t(row.group)}</TableCell>
+                <TableCell>{row.category}</TableCell>
+                <TableCell>{AREA_LABELS[props.language][row.country]}</TableCell>
+                <TableCell>{row.cutoff.iso ?? row.cutoff.raw}</TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

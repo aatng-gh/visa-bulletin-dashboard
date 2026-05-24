@@ -1,21 +1,25 @@
-import { For, Setter } from "solid-js";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import {
   AREA_ORDER,
   AREA_SHORT_LABELS,
   AreaKey,
+  bulletinKey,
   Language,
-  localizedBulletinLabel,
-  ManifestMonth,
-} from "../lib/visa.ts";
+  MONTH_LABELS,
+  parseBulletinKey,
+} from "../lib/visa";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
+import { Select } from "./ui/select";
 
 interface FilterPanelProps {
   language: Language;
-  setLanguage: Setter<Language>;
-  bulletins: ManifestMonth[];
   start: string;
-  setStart: Setter<string>;
+  setStart: Dispatch<SetStateAction<string>>;
   end: string;
-  setEnd: Setter<string>;
+  setEnd: Dispatch<SetStateAction<string>>;
   categories: string[];
   selectedCategories: Set<string>;
   setAllCategories: (checked: boolean) => void;
@@ -28,109 +32,178 @@ interface FilterPanelProps {
   t: (key: string, params?: Record<string, string>) => string;
 }
 
-export function FilterPanel(props: FilterPanelProps) {
+const START_YEAR = 2005;
+
+const YEAR_OPTIONS = (() => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: currentYear - START_YEAR + 1 }, (_, index) => START_YEAR + index);
+})();
+
+function FilterSection(props: { title: string; children: ReactNode }) {
   return (
-    <aside class="filters">
-      <fieldset>
-        <legend>{props.t("language")}</legend>
-        <label>
-          <span>{props.t("languageLabel")}</span>{" "}
-          <select
-            value={props.language}
-            onChange={(event) =>
-              props.setLanguage(event.currentTarget.value as Language)}
-          >
-            <option value="en">English</option>
-            <option value="vi">Tiếng Việt</option>
-          </select>
-        </label>
-      </fieldset>
+    <section className="space-y-3 border-b pb-5 last:border-b-0 last:pb-0">
+      <h3 className="text-sm font-semibold tracking-tight">{props.title}</h3>
+      {props.children}
+    </section>
+  );
+}
 
-      <fieldset>
-        <legend>{props.t("monthRange")}</legend>
-        <label>
-          <span>{props.t("start")}</span>{" "}
-          <select
-            value={props.start}
-            onChange={(event) => props.setStart(event.currentTarget.value)}
-          >
-            <For each={props.bulletins}>
-              {(bulletin) => (
-                <option value={bulletin.key}>
-                  {localizedBulletinLabel(props.language, bulletin)}
-                </option>
-              )}
-            </For>
-          </select>
-        </label>
-        <label>
-          <span>{props.t("end")}</span>{" "}
-          <select
-            value={props.end}
-            onChange={(event) => props.setEnd(event.currentTarget.value)}
-          >
-            <For each={props.bulletins}>
-              {(bulletin) => (
-                <option value={bulletin.key}>
-                  {localizedBulletinLabel(props.language, bulletin)}
-                </option>
-              )}
-            </For>
-          </select>
-        </label>
-      </fieldset>
+export function FilterPanel(props: FilterPanelProps) {
+  const setRangePart = (which: "start" | "end", part: "month" | "year", value: number) => {
+    const current = parseBulletinKey(which === "start" ? props.start : props.end);
+    const next = bulletinKey({ ...current, [part]: value });
+    if (which === "start") props.setStart(next);
+    else props.setEnd(next);
+  };
 
-      <fieldset>
-        <legend>{props.t("visaCategories")}</legend>
-        <button type="button" onClick={() => props.setAllCategories(true)}>
-          {props.t("all")}
-        </button>
-        <button type="button" onClick={() => props.setAllCategories(false)}>
-          {props.t("none")}
-        </button>
-        <For each={props.categories}>
-          {(category) => (
-            <label data-value={category}>
-              <input
-                type="checkbox"
-                checked={props.selectedCategories.has(category)}
-                onChange={(event) =>
-                  props.toggleCategory(category, event.currentTarget.checked)}
-              />{" "}
-              {category}
-            </label>
-          )}
-        </For>
-      </fieldset>
+  return (
+    <Card className="sticky top-4">
+      <CardHeader>
+        <CardTitle>{props.t("filters")}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <FilterSection title={props.t("monthRange")}>
+          <div className="grid gap-3">
+            <div className="space-y-2">
+              <Label>{props.t("start")}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={String(parseBulletinKey(props.start).month)}
+                  onChange={(event) =>
+                    setRangePart("start", "month", Number(event.currentTarget.value))
+                  }
+                >
+                  {MONTH_LABELS[props.language].slice(1).map((label, index) => (
+                    <option key={label} value={index + 1}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  value={String(parseBulletinKey(props.start).year)}
+                  onChange={(event) =>
+                    setRangePart("start", "year", Number(event.currentTarget.value))
+                  }
+                >
+                  {YEAR_OPTIONS.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{props.t("end")}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Select
+                  value={String(parseBulletinKey(props.end).month)}
+                  onChange={(event) =>
+                    setRangePart("end", "month", Number(event.currentTarget.value))
+                  }
+                >
+                  {MONTH_LABELS[props.language].slice(1).map((label, index) => (
+                    <option key={label} value={index + 1}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  value={String(parseBulletinKey(props.end).year)}
+                  onChange={(event) =>
+                    setRangePart("end", "year", Number(event.currentTarget.value))
+                  }
+                >
+                  {YEAR_OPTIONS.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </div>
+          </div>
+        </FilterSection>
 
-      <fieldset>
-        <legend>{props.t("countries")}</legend>
-        <button type="button" onClick={() => props.setAllCountries(true)}>
-          {props.t("all")}
-        </button>
-        <button type="button" onClick={() => props.setAllCountries(false)}>
-          {props.t("none")}
-        </button>
-        <For each={AREA_ORDER}>
-          {(country) => (
-            <label data-value={country}>
-              <input
-                type="checkbox"
-                checked={props.selectedCountries.has(country)}
-                onChange={(event) =>
-                  props.toggleCountry(country, event.currentTarget.checked)}
-              />{" "}
-              {AREA_SHORT_LABELS[props.language][country]}
-            </label>
-          )}
-        </For>
-      </fieldset>
-      <p class="count">
-        {props.t("rowsSelected", {
-          rows: String(props.rowsCount),
-          lines: String(props.linesCount),
-        })}
-      </p>
-    </aside>
+        <FilterSection title={props.t("visaCategories")}>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => props.setAllCategories(true)}
+            >
+              {props.t("all")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => props.setAllCategories(false)}
+            >
+              {props.t("none")}
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {props.categories.map((category) => (
+              <Label
+                key={category}
+                className="flex items-center gap-2 rounded-md border p-2 font-normal"
+                data-value={category}
+              >
+                <Checkbox
+                  checked={props.selectedCategories.has(category)}
+                  onChange={(event) => props.toggleCategory(category, event.currentTarget.checked)}
+                />
+                {category}
+              </Label>
+            ))}
+          </div>
+        </FilterSection>
+
+        <FilterSection title={props.t("countries")}>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => props.setAllCountries(true)}
+            >
+              {props.t("all")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => props.setAllCountries(false)}
+            >
+              {props.t("none")}
+            </Button>
+          </div>
+          <div className="grid gap-2">
+            {AREA_ORDER.map((country) => (
+              <Label
+                key={country}
+                className="flex items-center gap-2 rounded-md border p-2 font-normal"
+                data-value={country}
+              >
+                <Checkbox
+                  checked={props.selectedCountries.has(country)}
+                  onChange={(event) => props.toggleCountry(country, event.currentTarget.checked)}
+                />
+                {AREA_SHORT_LABELS[props.language][country]}
+              </Label>
+            ))}
+          </div>
+        </FilterSection>
+
+        <p className="text-sm text-muted-foreground">
+          {props.t("rowsSelected", {
+            rows: String(props.rowsCount),
+            lines: String(props.linesCount),
+          })}
+        </p>
+      </CardContent>
+    </Card>
   );
 }
