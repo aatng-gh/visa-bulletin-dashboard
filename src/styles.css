@@ -1,81 +1,51 @@
-body {
-  font-family:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  margin: 2rem;
-  color: #111827;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222.2 84% 4.9%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222.2 84% 4.9%);
+  --color-primary: hsl(221.2 83.2% 53.3%);
+  --color-primary-foreground: hsl(210 40% 98%);
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-accent: hsl(210 40% 96.1%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(214.3 31.8% 91.4%);
+  --color-input: hsl(214.3 31.8% 91.4%);
+  --color-ring: hsl(221.2 83.2% 53.3%);
 }
-.layout {
-  display: grid;
-  grid-template-columns: 1fr minmax(280px, 360px);
-  gap: 1.5rem;
-  align-items: start;
-}
-.filters {
-  border: 1px solid #d1d5db;
-  border-radius: 0.75rem;
-  padding: 1rem;
-  background: #f9fafb;
-  position: sticky;
-  top: 1rem;
-}
-fieldset {
-  border: 0;
-  padding: 0;
-  margin: 0 0 1rem;
-}
-legend {
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-label {
-  display: block;
-  margin: 0.25rem 0;
-}
-button {
-  margin: 0.15rem 0.25rem 0.5rem 0;
-  padding: 0.35rem 0.55rem;
-  border: 1px solid #9ca3af;
-  border-radius: 0.4rem;
-  background: white;
-  cursor: pointer;
-}
-.chart-wrap {
-  height: 560px;
-  margin-bottom: 2rem;
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
-  font-size: 0.86rem;
-}
-th,
-td {
-  border: 1px solid #d1d5db;
-  padding: 0.45rem;
-  text-align: left;
-}
-th {
-  background: #f3f4f6;
-  position: sticky;
-  top: 0;
-}
-.note,
-.count {
-  color: #4b5563;
-}
-.errors {
-  color: #991b1b;
-}
-.table-wrap {
-  max-height: 650px;
-  overflow: auto;
-  border: 1px solid #d1d5db;
-}
-@media (max-width: 850px) {
-  .layout {
-    grid-template-columns: 1fr;
+
+@layer base {
+  * {
+    border-color: var(--color-border);
   }
-  .filters {
-    position: static;
+
+  body {
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family:
+      "Inter",
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-underline-offset: 4px;
+  }
+
+  a:hover {
+    text-decoration: underline;
   }
 }
