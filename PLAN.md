@@ -1,26 +1,42 @@
-# USCIS Tracker Plan
+# Visa Bulletin Dashboard Plan
 
 ## Architecture
 
-This project is a **build-time scraper + static client-side dashboard**.
+This project is a **build-time scraper + statically built React dashboard**.
 
-- The fetch task generates parsed JSON data files locally or in CI.
-- The dashboard is a static `index.html` shell served by GitHub Pages.
-- The dashboard loads JSON files in the browser and filters/charts them
-  client-side.
+- The data task generates parsed JSON data files locally or in CI.
+- The dashboard source lives under `src/` and is bundled by Vite.
+- The built dashboard is served by GitHub Pages as static files.
+- The dashboard loads JSON files in the browser and filters/charts them client-side.
 - The dashboard is not rebuilt to change filters or date ranges.
+
+## File Naming
+
+- React component files use `PascalCase.tsx` under `src/components/`.
+- shadcn-style primitive files use `kebab/lowercase.tsx` under `src/components/ui/`.
+- Utility/domain modules use lowercase names under `src/lib/`.
+- Locale modules use BCP-47-ish language codes under `src/locales/`.
+- Node scripts live in `scripts/` and use kebab-case filenames.
+- Cached bulletin files use `data/YYYY-MM.json`.
+
+## UI Components
+
+The dashboard uses a small set of lightweight, shadcn-inspired primitives under
+`src/components/ui/`. These are intentionally minimal wrappers around native
+elements (using `cn()` for class merging and `class-variance-authority` only
+where variants are needed). They are **not** full shadcn/ui ports.
 
 ## Data Range
 
 Default fetch range:
 
-- start: `2025-01`
+- start: `2005-01`
 - end: current month
 
 Adjustable fetch range:
 
 ```bash
-deno task fetch -- --start 2025-01 --end 2026-06
+pnpm data -- --start 2025-01 --end 2026-06
 ```
 
 Dates use `YYYY-MM`.
@@ -51,36 +67,39 @@ data/manifest.json
 
 Rules:
 
-- Generated data files are ignored on the main branch.
-- GitHub Actions generates them during Pages deployment.
 - Use cached local JSON when available.
-- Query the website only when a month is missing from data.
+- Query the website only when a month is missing from `data/`.
 - Store parsed data, not raw HTML.
+- Data task logs are JSON structured logs.
 
 ## Commands
 
 ```bash
-deno task fetch
-deno task fetch -- --start 2025-06 --end 2026-06
-deno task serve
-deno task check
-deno task lint
+pnpm install
+pnpm dev
+pnpm data
+pnpm data -- --start 2025-06 --end 2026-06
+pnpm check
+pnpm build
+pnpm preview
 ```
 
-`deno task build` is an alias for `fetch`.
+`pnpm data` fetches missing data (requires **Node.js >= 26** for native
+TypeScript execution via `--experimental-strip-types`). `pnpm build` only
+builds the Vite/React dashboard to `dist/`.
 
 ## GitHub Pages
 
-Serve from repo root. Main page:
+Serve the generated Pages artifact. Main built page:
 
 ```text
-index.html
+dist/index.html
 ```
 
 For local development, run:
 
 ```bash
-deno task serve
+pnpm dev
 ```
 
 Then open:
@@ -89,7 +108,7 @@ Then open:
 http://localhost:8000/
 ```
 
-The page loads:
+The Vite dev server serves the app and local cached data files. The page loads:
 
 ```text
 data/manifest.json
@@ -100,7 +119,7 @@ data/{YYYY-MM}.json
 
 - Chart and data table on the left
 - Filter panel on the right
-- English/Vietnamese language switcher
+- Dynamic language dropdown with flags
 - Persisted filter panel state via browser local storage
 - Dynamic month-year start/end selectors
 - Visa category checkboxes
@@ -140,6 +159,7 @@ Monthly workflow:
 .github/workflows/monthly-build.yml
 ```
 
-It runs check, lint, fetches missing data, builds a Pages artifact containing
-`index.html` and generated `data/*.json`, then deploys to GitHub Pages. It does
-not commit generated data to the repo.
+It installs with pnpm, runs checks, fetches missing data, builds the React
+dashboard, creates a Pages artifact containing `dist/` and generated
+`data/*.json`, then deploys to GitHub Pages. It does not commit generated data
+to the repo.

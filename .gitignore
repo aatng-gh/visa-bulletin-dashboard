@@ -1,2 +1,4 @@
 data/*.json
+dist/
 site/
+node_modules/

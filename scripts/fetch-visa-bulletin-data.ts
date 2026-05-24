@@ -1,20 +1,14 @@
-#!/usr/bin/env -S deno run --allow-net=travel.state.gov --allow-read=data --allow-write=data
+#!/usr/bin/env node
 
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { parse } from "node-html-parser";
 
-const BASE_URL =
-  "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin";
+const BASE_URL = "https://travel.state.gov/content/travel/en/legal/visa-law0/visa-bulletin";
 const USER_AGENT = "uscis-tracker/1.0 (+https://travel.state.gov/)";
 const DATA_DIR = "data";
 
-const AREA_ORDER = [
-  "all_chargeability",
-  "china",
-  "india",
-  "mexico",
-  "philippines",
-] as const;
-type AreaKey = typeof AREA_ORDER[number];
+const AREA_ORDER = ["all_chargeability", "china", "india", "mexico", "philippines"] as const;
+type AreaKey = (typeof AREA_ORDER)[number];
 type VisaGroup = "family" | "employment" | "unknown";
 
 const MONTH_NAMES = [
@@ -41,6 +35,8 @@ interface MonthYear {
 interface CliArgs {
   start: MonthYear;
   end: MonthYear;
+  concurrency: number;
+  logFormat: LogFormat;
 }
 
 interface ParsedTableRow {
@@ -74,6 +70,34 @@ interface CacheManifest {
   months: CacheManifestMonth[];
 }
 
+type LogLevel = "info" | "warn" | "error";
+type LogFormat = "pretty" | "json";
+type LogFields = Record<string, string | number | boolean | null>;
+
+let logFormat: LogFormat = "pretty";
+
+function formatPrettyLog(level: LogLevel, event: string, fields: LogFields): string {
+  const icon = level === "error" ? "✖" : level === "warn" ? "⚠" : "•";
+  const details = Object.entries(fields)
+    .map(([key, value]) => `${key}=${value}`)
+    .join(" ");
+  return details.length > 0 ? `${icon} ${event} ${details}` : `${icon} ${event}`;
+}
+
+function log(level: LogLevel, event: string, fields: LogFields = {}): void {
+  const line =
+    logFormat === "json"
+      ? JSON.stringify({
+          timestamp: new Date().toISOString(),
+          level,
+          event,
+          ...fields,
+        })
+      : formatPrettyLog(level, event, fields);
+  if (level === "info") console.log(line);
+  else console.error(line);
+}
+
 function label(monthYear: MonthYear): string {
   return `${MONTH_NAMES[monthYear.month]} ${monthYear.year}`;
 }
@@ -97,10 +121,7 @@ function parseMonthYear(value: string, name: string): MonthYear {
   }
   const year = Number(match[1]);
   const month = Number(match[2]);
-  if (
-    !Number.isInteger(year) || year < 1900 || year > 2200 || month < 1 ||
-    month > 12
-  ) {
+  if (!Number.isInteger(year) || year < 1900 || year > 2200 || month < 1 || month > 12) {
     throw new Error(`invalid ${name}: ${value}`);
   }
   return { month, year };
@@ -109,13 +130,17 @@ function parseMonthYear(value: string, name: string): MonthYear {
 function defaultRange(): { start: MonthYear; end: MonthYear } {
   const now = new Date();
   return {
-    start: { month: 1, year: 2025 },
+    start: { month: 1, year: 2005 },
     end: { month: now.getMonth() + 1, year: now.getFullYear() },
   };
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const range = defaultRange();
+  const range = {
+    ...defaultRange(),
+    concurrency: 4,
+    logFormat: "pretty" as LogFormat,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--") {
@@ -123,7 +148,7 @@ function parseArgs(argv: string[]): CliArgs {
     }
     if (arg === "--help" || arg === "-h") {
       printHelp();
-      Deno.exit(0);
+      process.exit(0);
     }
     const next = argv[i + 1];
     if (arg === "--start") {
@@ -134,6 +159,22 @@ function parseArgs(argv: string[]): CliArgs {
       if (next === undefined) throw new Error("missing value for --end");
       range.end = parseMonthYear(next, "--end");
       i += 1;
+    } else if (arg === "--concurrency") {
+      if (next === undefined) throw new Error("missing value for --concurrency");
+      const concurrency = Number(next);
+      if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 12) {
+        throw new Error("--concurrency must be an integer from 1 to 12");
+      }
+      range.concurrency = concurrency;
+      i += 1;
+    } else if (arg === "--log-format") {
+      if (next !== "pretty" && next !== "json") {
+        throw new Error("--log-format must be pretty or json");
+      }
+      range.logFormat = next;
+      i += 1;
+    } else if (arg === "--json") {
+      range.logFormat = "json";
     } else {
       throw new Error(`unknown argument: ${arg}`);
     }
@@ -167,49 +208,97 @@ function fiscalYear(monthYear: MonthYear): number {
 }
 
 function bulletinUrl(monthYear: MonthYear): string {
+  return bulletinUrls(monthYear)[0];
+}
+
+function bulletinUrls(monthYear: MonthYear): string[] {
   const fy = fiscalYear(monthYear);
-  return `${BASE_URL}/${fy}/visa-bulletin-for-${
-    slug(monthYear)
-  }-${monthYear.year}.html`;
+  const monthSlug = slug(monthYear);
+  return [
+    `${BASE_URL}/${fy}/visa-bulletin-for-${monthSlug}-${monthYear.year}.html`,
+    `${BASE_URL}/${fy}/visa-bulletin-${monthSlug}-${monthYear.year}.html`,
+  ];
 }
 
 function dataPath(monthYear: MonthYear): string {
   return `${DATA_DIR}/${bulletinKey(monthYear)}.json`;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+class NonRetryFetchError extends Error {}
+
+function shouldRetryStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
 async function fetchHtml(url: string): Promise<string> {
-  const response = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) {
-    throw new Error(`HTTP Error ${response.status}: ${response.statusText}`);
+  const maxAttempts = 4;
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT },
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (response.ok) return await response.text();
+
+      const message = `HTTP Error ${response.status}: ${response.statusText}`;
+      if (!shouldRetryStatus(response.status)) {
+        throw new NonRetryFetchError(message);
+      }
+      if (attempt === maxAttempts) throw new Error(message);
+      lastError = new Error(message);
+    } catch (error) {
+      if (error instanceof NonRetryFetchError) throw error;
+      lastError = error;
+      if (attempt === maxAttempts) break;
+    }
+
+    const delay = 500 * 2 ** (attempt - 1);
+    log("warn", "fetch_retry", {
+      url,
+      attempt,
+      maxAttempts,
+      delayMs: delay,
+      error: lastError instanceof Error ? lastError.message : String(lastError),
+    });
+    await sleep(delay);
   }
-  return await response.text();
+
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 function normalizeSpace(value: string): string {
-  return value.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+  return value
+    .replace(/\u00a0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function extractTables(pageHtml: string): string[][][] {
   const root = parse(pageHtml, {
     blockTextElements: { script: false, style: false },
   });
-  return root.querySelectorAll("table")
+  return root
+    .querySelectorAll("table")
     .map((table) =>
-      table.querySelectorAll("tr")
-        .map((row) =>
-          row.querySelectorAll("th, td")
-            .map((cell) => normalizeSpace(cell.text))
-        )
+      table
+        .querySelectorAll("tr")
+        .map((row) => row.querySelectorAll("th, td").map((cell) => normalizeSpace(cell.text)))
         .filter((row) => row.some((cell) => cell.length > 0))
     )
     .filter((table) => table.length > 0);
 }
 
 function normalizeHeader(header: string): AreaKey | null {
-  const h = header.toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  const h = header
+    .toLowerCase()
+    .replace(/[^a-z]+/g, " ")
+    .trim();
   if (h.includes("all chargeability")) return "all_chargeability";
   if (h.includes("china")) return "china";
   if (h.includes("india")) return "india";
@@ -291,8 +380,7 @@ function parseVisaTables(pageHtml: string): ParsedTableRow[] {
   for (const table of extractTables(pageHtml)) {
     const headerIndex = table.findIndex((row) => {
       const normalized = row.map((cell) => normalizeHeader(cell));
-      return normalized.includes("all_chargeability") &&
-        normalized.filter(Boolean).length >= 3;
+      return normalized.includes("all_chargeability") && normalized.filter(Boolean).length >= 3;
     });
     if (headerIndex < 0) continue;
 
@@ -337,7 +425,7 @@ function parseVisaTables(pageHtml: string): ParsedTableRow[] {
 function buildMonthlyCache(
   monthYear: MonthYear,
   url: string,
-  rows: ParsedTableRow[],
+  rows: ParsedTableRow[]
 ): MonthlyCache {
   return {
     schemaVersion: 1,
@@ -361,30 +449,46 @@ function readMonthlyCache(value: string): MonthlyCache {
 async function ensureCachedMonth(monthYear: MonthYear): Promise<MonthlyCache> {
   const path = dataPath(monthYear);
   try {
-    const cached = readMonthlyCache(await Deno.readTextFile(path));
-    console.error(`Using cache ${label(monthYear)}: ${path}`);
+    const cached = readMonthlyCache(await readFile(path, "utf8"));
+    log("info", "cache_hit", {
+      bulletinKey: bulletinKey(monthYear),
+      label: label(monthYear),
+      path,
+    });
     return cached;
   } catch (error) {
-    if (!(error instanceof Deno.errors.NotFound)) throw error;
+    if (!(error instanceof Error) || !("code" in error) || error.code !== "ENOENT") {
+      throw error;
+    }
   }
 
-  const url = bulletinUrl(monthYear);
-  console.error(`Fetching ${label(monthYear)}: ${url}`);
-  const cache = buildMonthlyCache(
-    monthYear,
-    url,
-    parseVisaTables(await fetchHtml(url)),
-  );
-  await Deno.mkdir(DATA_DIR, { recursive: true });
-  await Deno.writeTextFile(path, `${JSON.stringify(cache, null, 2)}\n`);
-  return cache;
+  const urls = bulletinUrls(monthYear);
+  let lastError: unknown;
+  for (const url of urls) {
+    log("info", "cache_miss", {
+      bulletinKey: bulletinKey(monthYear),
+      label: label(monthYear),
+      url,
+    });
+    try {
+      const cache = buildMonthlyCache(monthYear, url, parseVisaTables(await fetchHtml(url)));
+      await mkdir(DATA_DIR, { recursive: true });
+      await writeFile(path, `${JSON.stringify(cache, null, 2)}\n`);
+      return cache;
+    } catch (error) {
+      lastError = error;
+      log("warn", "fetch_candidate_failed", {
+        bulletinKey: bulletinKey(monthYear),
+        label: label(monthYear),
+        url,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
-async function writeManifest(
-  months: MonthYear[],
-  start: MonthYear,
-  end: MonthYear,
-): Promise<void> {
+async function writeManifest(months: MonthYear[], start: MonthYear, end: MonthYear): Promise<void> {
   const manifest: CacheManifest = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
@@ -397,49 +501,88 @@ async function writeManifest(
       url: bulletinUrl(monthYear),
     })),
   };
-  await Deno.mkdir(DATA_DIR, { recursive: true });
-  await Deno.writeTextFile(
-    `${DATA_DIR}/manifest.json`,
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  );
+  await mkdir(DATA_DIR, { recursive: true });
+  await writeFile(`${DATA_DIR}/manifest.json`, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
 function printHelp(): void {
   console.log(`Fetch Visa Bulletin data cache.
 
 Default range:
-  2025-01 through the current month.
+  2005-01 through the current month.
 
 Command:
-  deno task fetch
+  pnpm data
 
 Options:
-  --start YYYY-MM        Defaults to 2025-01.
-  --end YYYY-MM          Defaults to current month.
+  --start YYYY-MM             Defaults to 2005-01.
+  --end YYYY-MM               Defaults to current month.
+  --concurrency N             Concurrent months to process, 1-12. Defaults to 4.
+  --log-format pretty|json    Defaults to pretty.
+  --json                      Shortcut for --log-format json.
 `);
 }
 
-async function main(): Promise<void> {
-  const { start, end } = parseArgs(Deno.args);
-  const months = monthRange(start, end);
-  for (const monthYear of months) {
-    try {
-      await ensureCachedMonth(monthYear);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`  warning: ${label(monthYear)}: ${message}`);
+async function processMonths(months: MonthYear[], concurrency: number): Promise<MonthYear[]> {
+  const cachedMonths: MonthYear[] = [];
+  let nextIndex = 0;
+
+  async function worker(): Promise<void> {
+    while (nextIndex < months.length) {
+      const monthYear = months[nextIndex];
+      nextIndex += 1;
+      try {
+        await ensureCachedMonth(monthYear);
+        cachedMonths.push(monthYear);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        log("warn", "month_skipped", {
+          bulletinKey: bulletinKey(monthYear),
+          label: label(monthYear),
+          error: message,
+        });
+      }
     }
   }
-  await writeManifest(months, start, end);
-  console.log(`Wrote ${DATA_DIR}/manifest.json`);
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, months.length) }, () => worker()));
+
+  return cachedMonths.sort((a, b) => key(a) - key(b));
 }
 
-if (import.meta.main) {
-  try {
-    await main();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`error: ${message}`);
-    Deno.exit(1);
+async function main(): Promise<void> {
+  const {
+    start,
+    end,
+    concurrency,
+    logFormat: selectedLogFormat,
+  } = parseArgs(process.argv.slice(2));
+  logFormat = selectedLogFormat;
+  const months = monthRange(start, end);
+  log("info", "data_fetch_started", {
+    start: bulletinKey(start),
+    end: bulletinKey(end),
+    months: months.length,
+    concurrency,
+  });
+  const cachedMonths = await processMonths(months, concurrency);
+  if (cachedMonths.length === 0) {
+    throw new Error("no bulletin data could be cached");
   }
+  await writeManifest(cachedMonths, cachedMonths[0], cachedMonths.at(-1)!);
+  log("info", "manifest_written", {
+    path: `${DATA_DIR}/manifest.json`,
+    cachedMonths: cachedMonths.length,
+    requestedMonths: months.length,
+    start: bulletinKey(cachedMonths[0]),
+    end: bulletinKey(cachedMonths.at(-1)!),
+  });
+}
+
+try {
+  await main();
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  log("error", "data_fetch_failed", { error: message });
+  process.exit(1);
 }

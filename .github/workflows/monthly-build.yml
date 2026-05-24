@@ -21,30 +21,38 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Deno
-        uses: denoland/setup-deno@v2
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          deno-version: v2.x
+          node-version: 26
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Check
-        run: deno task check
-
-      - name: Lint
-        run: deno task lint
+        run: pnpm check
 
       - name: Fetch monthly data
-        run: deno task fetch
+        run: pnpm data
+
+      - name: Build dashboard
+        run: pnpm build
 
       - name: Prepare Pages artifact
         run: |
           rm -rf site
           mkdir -p site/data
-          cp index.html site/index.html
+          cp -R dist/. site/
           cp data/*.json site/data/
 
       - name: Configure Pages
