@@ -34,10 +34,11 @@ interface VisaChartProps {
   activeBulletins: ManifestMonth[];
   rows: VisaRow[];
   language: Language;
+  themeMode: "light" | "dark" | "system";
   t: (key: string, params?: Record<string, string>) => string;
 }
 
-export function VisaChart({ activeBulletins, rows, language, t }: VisaChartProps) {
+export function VisaChart({ activeBulletins, rows, language, themeMode, t }: VisaChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart<"line", (number | null)[], string> | null>(null);
   const rowsWithDateCutoffs = useMemo(
@@ -142,8 +143,46 @@ export function VisaChart({ activeBulletins, rows, language, t }: VisaChartProps
     if (chart.options.scales?.x?.title) {
       chart.options.scales.x.title.text = t("xAxis");
     }
+    // Theme-aware grid lines + text colors for polished dark mode on canvas
+    const isDark =
+      themeMode === "dark" ||
+      (themeMode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const yGridColor = isDark ? "rgba(148, 163, 184, 0.15)" : "rgba(148, 163, 184, 0.25)";
+    const xGridColor = isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(148, 163, 184, 0.18)";
+    if (chart.options.scales?.y?.grid) {
+      chart.options.scales.y.grid.color = yGridColor;
+    }
+    if (chart.options.scales?.x?.grid) {
+      chart.options.scales.x.grid.color = xGridColor;
+    }
+
+    const textColor = isDark ? "#e2e8f0" : "#334155";
+    if (chart.options.plugins?.legend?.labels) {
+      chart.options.plugins.legend.labels.color = textColor;
+    }
+    if (chart.options.plugins?.title) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (chart.options.plugins.title as any).color = textColor;
+    }
+    if (chart.options.scales?.y?.ticks) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (chart.options.scales.y.ticks as any).color = textColor;
+    }
+    if (chart.options.scales?.y?.title) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (chart.options.scales.y.title as any).color = textColor;
+    }
+    if (chart.options.scales?.x?.ticks) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (chart.options.scales.x.ticks as any).color = textColor;
+    }
+    if (chart.options.scales?.x?.title) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (chart.options.scales.x.title as any).color = textColor;
+    }
+
     chart.update();
-  }, [activeBulletins, language, rowsWithDateCutoffs, t]);
+  }, [activeBulletins, language, rowsWithDateCutoffs, t, themeMode]);
 
   return (
     <div className="relative h-[560px] rounded-xl border bg-card p-4 shadow">
