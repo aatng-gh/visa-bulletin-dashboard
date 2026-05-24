@@ -1,4 +1,4 @@
-import { AREA_LABELS, Language, VisaRow } from "../lib/visa";
+import { AREA_LABELS, formatCutoffForDisplay, getCategoryDisplayName, Language, VisaRow } from "../lib/visa";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 interface DataTableProps {
@@ -35,9 +35,9 @@ export function DataTable(props: DataTableProps) {
                   <a href={row.url}>{props.bulletinLabel(row.bulletinKey)}</a>
                 </TableCell>
                 <TableCell>{props.t(row.group)}</TableCell>
-                <TableCell>{row.category}</TableCell>
+                <TableCell>{getCategoryDisplayName(row.category)}</TableCell>
                 <TableCell>{AREA_LABELS[props.language][row.country]}</TableCell>
-                <TableCell>{row.cutoff.iso ?? row.cutoff.raw}</TableCell>
+                <TableCell>{formatCutoffForDisplay(props.language, row.cutoff)}</TableCell>
               </TableRow>
             ))
           )}

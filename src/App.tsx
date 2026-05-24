@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable } from "./components/DataTable";
 import { FilterPanel } from "./components/FilterPanel";
+import { Button } from "./components/ui/button";
 import { Select } from "./components/ui/select";
 import { VisaChart } from "./components/VisaChart";
 import {
   AREA_ORDER,
   bulletinKey,
   categorySortKey,
-  DATE_LOCALES,
+  formatGeneratedAt,
   isLanguage,
   LANGUAGES,
   Language,
@@ -18,6 +19,7 @@ import {
   translate,
   VisaData,
 } from "./lib/visa";
+import { isDarkMode, readTheme, ThemeMode } from "./lib/theme";
 
 const FILTER_STATE_KEY = "visaBulletinFilterState";
 
@@ -27,6 +29,8 @@ interface StoredFilterState {
   categories?: string[];
   countries?: string[];
 }
+
+
 
 function readStoredFilterState(): StoredFilterState {
   const raw = localStorage.getItem(FILTER_STATE_KEY);
@@ -48,6 +52,7 @@ export function App() {
   const [data, setData] = useState<VisaData | null>(null);
   const [dataError, setDataError] = useState<Error | null>(null);
   const [language, setLanguage] = useState<Language>(readLanguage);
+  const [themeMode, setThemeMode] = useState<ThemeMode>(readTheme);
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
@@ -127,6 +132,23 @@ export function App() {
     localStorage.setItem("language", language);
   }, [language, t]);
 
+  // Theme: persist, respect system, apply .dark class to <html>
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", isDarkMode(themeMode));
+    localStorage.setItem("theme", themeMode);
+  }, [themeMode]);
+
+  useEffect(() => {
+    if (themeMode !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = (e: MediaQueryListEvent) => {
+      document.documentElement.classList.toggle("dark", e.matches);
+    };
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [themeMode]);
+
   useEffect(() => {
     if (!data || !start || !end) return;
     localStorage.setItem(
@@ -173,7 +195,7 @@ export function App() {
     return t("cachedRange", {
       start: localizedBulletinLabel(language, data.bulletins[0]),
       end: localizedBulletinLabel(language, data.bulletins[data.bulletins.length - 1]),
-      generated: new Date(data.manifest.generatedAt).toLocaleString(DATE_LOCALES[language]),
+      generated: formatGeneratedAt(language, data.manifest.generatedAt),
     });
   }, [data, language, t]);
 
@@ -195,6 +217,16 @@ export function App() {
     });
   };
 
+  const cycleTheme = () => {
+    setThemeMode((current) => {
+      if (current === "system") return "light";
+      if (current === "light") return "dark";
+      return "system";
+    });
+  };
+
+  const themeIcon = (mode: ThemeMode) => (mode === "light" ? "☀️" : mode === "dark" ? "🌙" : "💻");
+
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -203,27 +235,41 @@ export function App() {
           <p className="text-sm text-muted-foreground">{rangeText}</p>
           <p className="text-sm text-muted-foreground">{t("note")}</p>
         </div>
-        <div className="w-full sm:w-52">
-          <label className="sr-only" htmlFor="language-select">
-            {t("languageLabel")}
-          </label>
-          <Select
-            id="language-select"
-            value={language}
-            aria-label={t("languageLabel")}
-            onChange={(event) => setLanguage(event.currentTarget.value as Language)}
+        <div className="flex w-full items-center gap-2 sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            onClick={cycleTheme}
+            aria-label={t("themeLabel")}
+            title={`${t("theme")}: ${t(themeMode)}`}
+            className="flex h-9 items-center gap-1.5 px-2.5 py-0 text-sm"
           >
-            {LANGUAGES.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.flag} {option.name}
-              </option>
-            ))}
-          </Select>
+            <span aria-hidden="true" className="text-base leading-none">{themeIcon(themeMode)}</span>
+            <span className="text-xs font-medium capitalize">{t(themeMode)}</span>
+          </Button>
+          <div className="w-full sm:w-52">
+            <label className="sr-only" htmlFor="language-select">
+              {t("languageLabel")}
+            </label>
+            <Select
+              id="language-select"
+              value={language}
+              aria-label={t("languageLabel")}
+              onChange={(event) => setLanguage(event.currentTarget.value as Language)}
+            >
+              {LANGUAGES.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.flag} {option.name}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
       </header>
 
       {dataError && (
-        <section className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive">
+        <section className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-[color:var(--color-destructive-foreground)]">
           <h2 className="font-semibold">{t("loadErrorTitle")}</h2>
           <p>{dataError.message}</p>
           <p>{t("loadErrorHelp")}</p>
@@ -239,6 +285,7 @@ export function App() {
               activeBulletins={activeBulletins}
               rows={filteredRows}
               language={language}
+              themeMode={themeMode}
               t={t}
             />
             <section className="space-y-3">

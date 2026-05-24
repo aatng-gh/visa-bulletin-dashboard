@@ -12,7 +12,7 @@ export {
   MONTH_SHORT_LABELS,
   translate,
 } from "../locales/index";
-import { type Language, MONTH_LABELS, MONTH_SHORT_LABELS } from "../locales/index";
+import { type Language, DATE_LOCALES, MONTH_LABELS, MONTH_SHORT_LABELS, translate } from "../locales/index";
 export type CutoffKind = "current" | "unavailable" | "unknown" | "date";
 
 export interface ManifestMonth {
@@ -171,18 +171,86 @@ export function categorySortKey(category: string) {
         "EB-4": "B05",
         "EB-4 Certain Religious Workers": "B06",
         "EB-5 Unreserved": "B07",
-        "EB-5 Set Aside Rural": "B08",
-        "EB-5 Set Aside High Unemployment": "B09",
-        "EB-5 Set Aside Infrastructure": "B10",
       } as Record<string, string>
     )[category] ?? `Z${category}`
   );
 }
 
+/** Returns a cleaner display name by removing "Set Aside" (which doesn't add value in the UI). */
+export function getCategoryDisplayName(category: string): string {
+  return category.replace(" Set Aside", "");
+}
+
+// English fallbacks for category tooltips (used only if no i18n entry exists yet).
+// These are intentionally kept in sync with src/locales/en.ts as a last-resort fallback.
+export const DEFAULT_CATEGORY_TOOLTIPS: Record<string, string> = {
+  F1: "Family 1st Preference: Unmarried sons/daughters of U.S. citizens",
+  F2A: "Family 2nd Pref (F2A): Spouses & children of permanent residents",
+  F2B: "Family 2nd Pref (F2B): Unmarried sons/daughters (21+) of permanent residents",
+  F3: "Family 3rd Preference: Married sons/daughters of U.S. citizens",
+  F4: "Family 4th Preference: Siblings of U.S. citizens (and their families)",
+  "EB-1": "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
+  "EB-2": "EB-2: Advanced degree professionals or exceptional ability",
+  "EB-3": "EB-3: Skilled workers, professionals & other workers",
+  "EB-3 Other Workers": "EB-3 Other Workers: Jobs requiring <2 years training/experience",
+  "EB-4": "EB-4: Special immigrants (religious, broadcasters, etc.)",
+  "EB-4 Certain Religious Workers": "EB-4 Certain Religious Workers: Non-profit religious organization workers",
+  "EB-5 Unreserved": "EB-5 Unreserved: Immigrant investors (general category)",
+  "EB-5 Set Aside Rural": "EB-5 Rural: Set-aside visas for rural area investments",
+  "EB-5 Set Aside High Unemployment": "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
+  "EB-5 Set Aside Infrastructure": "EB-5 Infrastructure: Set-aside for infrastructure projects",
+};
+
 export function ordinalToIso(value: number | null | undefined) {
   const epochOrdinal = 719163;
   if (value === null || value === undefined || value < epochOrdinal) return "";
   return new Date((value - epochOrdinal) * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * Returns a human-friendly, locale-aware display string for a cutoff value.
+ * Prefers the parsed ISO date for actual dates; uses translated labels for
+ * Current / Unavailable / Unknown. Used to unify presentation in tables.
+ */
+export function formatCutoffForDisplay(language: Language, cutoff: Cutoff): string {
+  switch (cutoff.kind) {
+    case "current":
+      return translate(language, "cutoffCurrent");
+    case "unavailable":
+      return translate(language, "cutoffUnavailable");
+    case "date":
+      return cutoff.iso ?? cutoff.raw;
+    case "unknown":
+    default:
+      return translate(language, "cutoffUnknown");
+  }
+}
+
+/**
+ * Formats the manifest generatedAt timestamp into a polished, short,
+ * locale-aware string (e.g. "May 23, 2026, 2:30 PM").
+ * Uses DATE_LOCALES for proper Intl formatting per language.
+ */
+export function formatGeneratedAt(language: Language, generatedAt: string): string {
+  try {
+    const date = new Date(generatedAt);
+    if (Number.isNaN(date.getTime())) {
+      return generatedAt;
+    }
+    const locale = DATE_LOCALES[language];
+    const dateStr = date.toLocaleDateString(locale, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+    const timeStr = date.toLocaleTimeString(locale, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    return `${dateStr}, ${timeStr}`;
+  } catch {
+    return generatedAt;
+  }
 }
 
 function parseCutoff(value: string): Cutoff {
