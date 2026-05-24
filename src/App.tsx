@@ -19,6 +19,7 @@ import {
   translate,
   VisaData,
 } from "./lib/visa";
+import { isDarkMode, readTheme, ThemeMode } from "./lib/theme";
 
 const FILTER_STATE_KEY = "visaBulletinFilterState";
 
@@ -29,13 +30,7 @@ interface StoredFilterState {
   countries?: string[];
 }
 
-export type ThemeMode = "light" | "dark" | "system";
 
-function readTheme(): ThemeMode {
-  const stored = localStorage.getItem("theme");
-  if (stored === "light" || stored === "dark" || stored === "system") return stored;
-  return "system";
-}
 
 function readStoredFilterState(): StoredFilterState {
   const raw = localStorage.getItem(FILTER_STATE_KEY);
@@ -140,13 +135,7 @@ export function App() {
   // Theme: persist, respect system, apply .dark class to <html>
   useEffect(() => {
     const root = document.documentElement;
-    const applyTheme = (mode: ThemeMode) => {
-      const shouldDark =
-        mode === "dark" ||
-        (mode === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      root.classList.toggle("dark", shouldDark);
-    };
-    applyTheme(themeMode);
+    root.classList.toggle("dark", isDarkMode(themeMode));
     localStorage.setItem("theme", themeMode);
   }, [themeMode]);
 
@@ -250,12 +239,14 @@ export function App() {
           <Button
             type="button"
             variant="outline"
-            size="icon"
+            size="default"
             onClick={cycleTheme}
             aria-label={t("themeLabel")}
             title={`${t("theme")}: ${t(themeMode)}`}
+            className="flex h-9 items-center gap-1.5 px-2.5 py-0 text-sm"
           >
             <span aria-hidden="true" className="text-base leading-none">{themeIcon(themeMode)}</span>
+            <span className="text-xs font-medium capitalize">{t(themeMode)}</span>
           </Button>
           <div className="w-full sm:w-52">
             <label className="sr-only" htmlFor="language-select">
@@ -278,7 +269,7 @@ export function App() {
       </header>
 
       {dataError && (
-        <section className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-destructive dark:text-destructive-foreground">
+        <section className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-[color:var(--color-destructive-foreground)]">
           <h2 className="font-semibold">{t("loadErrorTitle")}</h2>
           <p>{dataError.message}</p>
           <p>{t("loadErrorHelp")}</p>
