@@ -4,6 +4,8 @@ import {
   AREA_SHORT_LABELS,
   AreaKey,
   bulletinKey,
+  DEFAULT_CATEGORY_TOOLTIPS,
+  getCategoryDisplayName,
   Language,
   MONTH_LABELS,
   parseBulletinKey,
@@ -49,32 +51,62 @@ function FilterSection(props: { title: string; children: ReactNode }) {
   );
 }
 
+interface CategoryCheckboxProps {
+  category: string;
+  tooltip: string;
+  checked: boolean;
+  onToggle: (category: string, checked: boolean) => void;
+  tooltipId: string;
+}
+
+function CategoryCheckbox({ category, tooltip, checked, onToggle, tooltipId }: CategoryCheckboxProps) {
+  return (
+    <Label
+      className="flex items-center gap-2 rounded-md border p-2 font-normal"
+      data-value={category}
+    >
+      <Checkbox
+        checked={checked}
+        onChange={(event) => onToggle(category, event.currentTarget.checked)}
+        aria-describedby={tooltipId}
+      />
+      <span className="flex-1 overflow-hidden text-ellipsis line-clamp-2 text-sm leading-tight">
+        {getCategoryDisplayName(category)}
+      </span>
+
+      {/* Question mark icon as the dedicated hover target for the tooltip */}
+      <Tooltip content={tooltip} id={tooltipId}>
+        <span
+          className="ml-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground cursor-help"
+          aria-hidden="true"
+          title={tooltip}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.25"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3.5 w-3.5"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <path d="M12 17h.01" />
+          </svg>
+        </span>
+      </Tooltip>
+    </Label>
+  );
+}
+
 export function FilterPanel(props: FilterPanelProps) {
   const setRangePart = (which: "start" | "end", part: "month" | "year", value: number) => {
     const current = parseBulletinKey(which === "start" ? props.start : props.end);
     const next = bulletinKey({ ...current, [part]: value });
     if (which === "start") props.setStart(next);
     else props.setEnd(next);
-  };
-
-  // English fallbacks for category tooltips (used if no i18n entry yet).
-  // All strings are also provided via t() in the three locale files.
-  const DEFAULT_TOOLTIPS: Record<string, string> = {
-    F1: "Family 1st Preference: Unmarried sons/daughters of U.S. citizens",
-    F2A: "Family 2nd Pref (F2A): Spouses & children of permanent residents",
-    F2B: "Family 2nd Pref (F2B): Unmarried sons/daughters (21+) of permanent residents",
-    F3: "Family 3rd Preference: Married sons/daughters of U.S. citizens",
-    F4: "Family 4th Preference: Siblings of U.S. citizens (and their families)",
-    "EB-1": "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
-    "EB-2": "EB-2: Advanced degree professionals or exceptional ability",
-    "EB-3": "EB-3: Skilled workers, professionals & other workers",
-    "EB-3 Other Workers": "EB-3 Other Workers: Jobs requiring <2 years training/experience",
-    "EB-4": "EB-4: Special immigrants (religious, broadcasters, etc.)",
-    "EB-4 Certain Religious Workers": "EB-4 Certain Religious Workers: Non-profit religious organization workers",
-    "EB-5 Unreserved": "EB-5 Unreserved: Immigrant investors (general category)",
-    "EB-5 Set Aside Rural": "EB-5 Rural: Set-aside visas for rural area investments",
-    "EB-5 Set Aside High Unemployment": "EB-5 High Unemployment: Set-aside for targeted high-unemp. areas",
-    "EB-5 Set Aside Infrastructure": "EB-5 Infrastructure: Set-aside for infrastructure projects",
   };
 
   const getTooltipKey = (category: string) =>
@@ -84,7 +116,7 @@ export function FilterPanel(props: FilterPanelProps) {
     const key = getTooltipKey(category);
     const translated = props.t(key);
     if (translated === key) {
-      return DEFAULT_TOOLTIPS[category] ?? category;
+      return DEFAULT_CATEGORY_TOOLTIPS[category] ?? category;
     }
     return translated;
   };
@@ -98,6 +130,18 @@ export function FilterPanel(props: FilterPanelProps) {
   const setGroupCategories = (cats: string[], checked: boolean) => {
     cats.forEach((cat) => props.toggleCategory(cat, checked));
   };
+
+  const allCountriesSelected = AREA_ORDER.every((c) => props.selectedCountries.has(c));
+  const noCountriesSelected = props.selectedCountries.size === 0;
+
+  // Per-group selection states
+  const allFamilySelected =
+    familyCategories.length > 0 &&
+    familyCategories.every((c) => props.selectedCategories.has(c));
+
+  const allEmploymentSelected =
+    employmentCategories.length > 0 &&
+    employmentCategories.every((c) => props.selectedCategories.has(c));
 
   return (
     <Card className="sticky top-4">
@@ -169,22 +213,23 @@ export function FilterPanel(props: FilterPanelProps) {
         </FilterSection>
 
         <FilterSection title={props.t("visaCategories")}>
+          {/* Quick group toggles for Family and Employment */}
           <div className="flex gap-2">
             <Button
               type="button"
               size="sm"
-              variant="secondary"
-              onClick={() => props.setAllCategories(true)}
+              variant={allFamilySelected ? "secondary" : "outline"}
+              onClick={() => setGroupCategories(familyCategories, !allFamilySelected)}
             >
-              {props.t("all")}
+              {props.t("familySponsored")}
             </Button>
             <Button
               type="button"
               size="sm"
-              variant="outline"
-              onClick={() => props.setAllCategories(false)}
+              variant={allEmploymentSelected ? "secondary" : "outline"}
+              onClick={() => setGroupCategories(employmentCategories, !allEmploymentSelected)}
             >
-              {props.t("none")}
+              {props.t("employmentBased")}
             </Button>
           </div>
 
@@ -200,46 +245,20 @@ export function FilterPanel(props: FilterPanelProps) {
                   {props.t("familySponsored")}
                 </span>
                 <div className="h-px flex-1 bg-border" aria-hidden="true" />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 rounded px-1.5 text-[10px] font-medium"
-                  aria-label={props.t("allFamily")}
-                  onClick={() => setGroupCategories(familyCategories, true)}
-                >
-                  {props.t("all")}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 rounded px-1.5 text-[10px] font-medium"
-                  aria-label={props.t("noneFamily")}
-                  onClick={() => setGroupCategories(familyCategories, false)}
-                >
-                  {props.t("none")}
-                </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {familyCategories.map((category) => {
                   const tooltip = getCategoryTooltip(category);
+                  const tooltipId = `tooltip-${category.replace(/\s+/g, "-")}`;
                   return (
-                    <Tooltip key={category} content={tooltip}>
-                      <Label
-                        className="flex items-center gap-2 rounded-md border p-2 font-normal"
-                        data-value={category}
-                        title={tooltip}
-                      >
-                        <Checkbox
-                          checked={props.selectedCategories.has(category)}
-                          onChange={(event) =>
-                            props.toggleCategory(category, event.currentTarget.checked)
-                          }
-                        />
-                        {category}
-                      </Label>
-                    </Tooltip>
+                    <CategoryCheckbox
+                      key={category}
+                      category={category}
+                      tooltip={tooltip}
+                      checked={props.selectedCategories.has(category)}
+                      onToggle={props.toggleCategory}
+                      tooltipId={tooltipId}
+                    />
                   );
                 })}
               </div>
@@ -258,46 +277,20 @@ export function FilterPanel(props: FilterPanelProps) {
                   {props.t("employmentBased")}
                 </span>
                 <div className="h-px flex-1 bg-border" aria-hidden="true" />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 rounded px-1.5 text-[10px] font-medium"
-                  aria-label={props.t("allEmployment")}
-                  onClick={() => setGroupCategories(employmentCategories, true)}
-                >
-                  {props.t("all")}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 rounded px-1.5 text-[10px] font-medium"
-                  aria-label={props.t("noneEmployment")}
-                  onClick={() => setGroupCategories(employmentCategories, false)}
-                >
-                  {props.t("none")}
-                </Button>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {employmentCategories.map((category) => {
                   const tooltip = getCategoryTooltip(category);
+                  const tooltipId = `tooltip-${category.replace(/\s+/g, "-")}`;
                   return (
-                    <Tooltip key={category} content={tooltip}>
-                      <Label
-                        className="flex items-center gap-2 rounded-md border p-2 font-normal"
-                        data-value={category}
-                        title={tooltip}
-                      >
-                        <Checkbox
-                          checked={props.selectedCategories.has(category)}
-                          onChange={(event) =>
-                            props.toggleCategory(category, event.currentTarget.checked)
-                          }
-                        />
-                        {category}
-                      </Label>
-                    </Tooltip>
+                    <CategoryCheckbox
+                      key={category}
+                      category={category}
+                      tooltip={tooltip}
+                      checked={props.selectedCategories.has(category)}
+                      onToggle={props.toggleCategory}
+                      tooltipId={tooltipId}
+                    />
                   );
                 })}
               </div>
@@ -316,22 +309,16 @@ export function FilterPanel(props: FilterPanelProps) {
               <div className="grid grid-cols-2 gap-2">
                 {otherCategories.map((category) => {
                   const tooltip = getCategoryTooltip(category);
+                  const tooltipId = `tooltip-${category.replace(/\s+/g, "-")}`;
                   return (
-                    <Tooltip key={category} content={tooltip}>
-                      <Label
-                        className="flex items-center gap-2 rounded-md border p-2 font-normal"
-                        data-value={category}
-                        title={tooltip}
-                      >
-                        <Checkbox
-                          checked={props.selectedCategories.has(category)}
-                          onChange={(event) =>
-                            props.toggleCategory(category, event.currentTarget.checked)
-                          }
-                        />
-                        {category}
-                      </Label>
-                    </Tooltip>
+                    <CategoryCheckbox
+                      key={category}
+                      category={category}
+                      tooltip={tooltip}
+                      checked={props.selectedCategories.has(category)}
+                      onToggle={props.toggleCategory}
+                      tooltipId={tooltipId}
+                    />
                   );
                 })}
               </div>
@@ -344,7 +331,7 @@ export function FilterPanel(props: FilterPanelProps) {
             <Button
               type="button"
               size="sm"
-              variant="secondary"
+              variant={allCountriesSelected ? "secondary" : "outline"}
               onClick={() => props.setAllCountries(true)}
             >
               {props.t("all")}
@@ -352,7 +339,7 @@ export function FilterPanel(props: FilterPanelProps) {
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant={noCountriesSelected ? "secondary" : "outline"}
               onClick={() => props.setAllCountries(false)}
             >
               {props.t("none")}
