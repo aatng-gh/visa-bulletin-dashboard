@@ -171,13 +171,35 @@ export function categorySortKey(category: string) {
         "EB-4": "B05",
         "EB-4 Certain Religious Workers": "B06",
         "EB-5 Unreserved": "B07",
-        "EB-5 Set Aside Rural": "B08",
-        "EB-5 Set Aside High Unemployment": "B09",
-        "EB-5 Set Aside Infrastructure": "B10",
       } as Record<string, string>
     )[category] ?? `Z${category}`
   );
 }
+
+/** Returns a cleaner display name by removing "Set Aside" (which doesn't add value in the UI). */
+export function getCategoryDisplayName(category: string): string {
+  return category.replace(" Set Aside", "");
+}
+
+// English fallbacks for category tooltips (used only if no i18n entry exists yet).
+// These are intentionally kept in sync with src/locales/en.ts as a last-resort fallback.
+export const DEFAULT_CATEGORY_TOOLTIPS: Record<string, string> = {
+  F1: "Family 1st Preference: Unmarried sons/daughters of U.S. citizens",
+  F2A: "Family 2nd Pref (F2A): Spouses & children of permanent residents",
+  F2B: "Family 2nd Pref (F2B): Unmarried sons/daughters (21+) of permanent residents",
+  F3: "Family 3rd Preference: Married sons/daughters of U.S. citizens",
+  F4: "Family 4th Preference: Siblings of U.S. citizens (and their families)",
+  "EB-1": "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
+  "EB-2": "EB-2: Advanced degree professionals or exceptional ability",
+  "EB-3": "EB-3: Skilled workers, professionals & other workers",
+  "EB-3 Other Workers": "EB-3 Other Workers: Jobs requiring <2 years training/experience",
+  "EB-4": "EB-4: Special immigrants (religious, broadcasters, etc.)",
+  "EB-4 Certain Religious Workers": "EB-4 Certain Religious Workers: Non-profit religious organization workers",
+  "EB-5 Unreserved": "EB-5 Unreserved: Immigrant investors (general category)",
+  "EB-5 Set Aside Rural": "EB-5 Rural: Set-aside visas for rural area investments",
+  "EB-5 Set Aside High Unemployment": "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
+  "EB-5 Set Aside Infrastructure": "EB-5 Infrastructure: Set-aside for infrastructure projects",
+};
 
 export function ordinalToIso(value: number | null | undefined) {
   const epochOrdinal = 719163;
