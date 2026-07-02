@@ -440,7 +440,21 @@ function buildMonthlyCache(
 
 function readMonthlyCache(value: string): MonthlyCache {
   const parsed = JSON.parse(value) as MonthlyCache;
-  if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.rows)) {
+  if (
+    parsed.schemaVersion !== 1 ||
+    typeof parsed.bulletinMonth !== "string" ||
+    typeof parsed.bulletinYear !== "number" ||
+    typeof parsed.bulletinLabel !== "string" ||
+    typeof parsed.bulletinKey !== "string" ||
+    typeof parsed.url !== "string" ||
+    !Array.isArray(parsed.rows) ||
+    parsed.rows.some(
+      (row) =>
+        (row.group !== "family" && row.group !== "employment" && row.group !== "unknown") ||
+        typeof row.category !== "string" ||
+        AREA_ORDER.some((area) => typeof row.areas?.[area] !== "string")
+    )
+  ) {
     throw new Error("unsupported cache format");
   }
   return parsed;
@@ -512,7 +526,7 @@ Default range:
   2005-01 through the current month.
 
 Command:
-  pnpm data
+  nub run data
 
 Options:
   --start YYYY-MM             Defaults to 2005-01.

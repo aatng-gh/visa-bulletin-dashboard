@@ -1,6 +1,7 @@
 export const AREA_ORDER = ["all_chargeability", "china", "india", "mexico", "philippines"] as const;
 
 export type AreaKey = (typeof AREA_ORDER)[number];
+export type VisaGroup = "family" | "employment" | "unknown";
 export type { Language } from "../locales/index";
 export {
   AREA_LABELS,
@@ -12,7 +13,13 @@ export {
   MONTH_SHORT_LABELS,
   translate,
 } from "../locales/index";
-import { type Language, DATE_LOCALES, MONTH_LABELS, MONTH_SHORT_LABELS, translate } from "../locales/index";
+import {
+  type Language,
+  DATE_LOCALES,
+  MONTH_LABELS,
+  MONTH_SHORT_LABELS,
+  translate,
+} from "../locales/index";
 export type CutoffKind = "current" | "unavailable" | "unknown" | "date";
 
 export interface ManifestMonth {
@@ -23,7 +30,7 @@ export interface ManifestMonth {
 }
 
 export interface Manifest {
-  schemaVersion: number;
+  schemaVersion: 1;
   generatedAt: string;
   start: string;
   end: string;
@@ -31,13 +38,13 @@ export interface Manifest {
 }
 
 export interface MonthCacheRow {
-  group: string;
+  group: VisaGroup;
   category: string;
   areas: Record<AreaKey, string>;
 }
 
 export interface MonthCache {
-  schemaVersion: number;
+  schemaVersion: 1;
   bulletinMonth: string;
   bulletinYear: number;
   bulletinLabel: string;
@@ -59,7 +66,7 @@ export interface VisaRow {
   bulletinLabel: string;
   bulletinKey: string;
   url: string;
-  group: string;
+  group: VisaGroup;
   category: string;
   country: AreaKey;
   countryLabel: AreaKey;
@@ -99,8 +106,24 @@ export function bulletinKey(monthYear: MonthYear) {
 }
 
 export function parseBulletinKey(key: string): MonthYear {
-  const [year, month] = key.split("-").map(Number);
+  const match = /^(\d{4})-(\d{2})$/.exec(key);
+  if (match === null) {
+    throw new Error(`Invalid bulletin key: ${key}`);
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new Error(`Invalid bulletin key: ${key}`);
+  }
   return { month, year };
+}
+
+export function tryParseBulletinKey(key: string): MonthYear | null {
+  try {
+    return parseBulletinKey(key);
+  } catch {
+    return null;
+  }
 }
 
 export function monthRange(startKey: string, endKey: string): MonthYear[] {
@@ -171,6 +194,9 @@ export function categorySortKey(category: string) {
         "EB-4": "B05",
         "EB-4 Certain Religious Workers": "B06",
         "EB-5 Unreserved": "B07",
+        "EB-5 Set Aside Rural": "B08",
+        "EB-5 Set Aside High Unemployment": "B09",
+        "EB-5 Set Aside Infrastructure": "B10",
       } as Record<string, string>
     )[category] ?? `Z${category}`
   );
@@ -189,15 +215,18 @@ export const DEFAULT_CATEGORY_TOOLTIPS: Record<string, string> = {
   F2B: "Family 2nd Pref (F2B): Unmarried sons/daughters (21+) of permanent residents",
   F3: "Family 3rd Preference: Married sons/daughters of U.S. citizens",
   F4: "Family 4th Preference: Siblings of U.S. citizens (and their families)",
-  "EB-1": "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
+  "EB-1":
+    "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
   "EB-2": "EB-2: Advanced degree professionals or exceptional ability",
   "EB-3": "EB-3: Skilled workers, professionals & other workers",
   "EB-3 Other Workers": "EB-3 Other Workers: Jobs requiring <2 years training/experience",
   "EB-4": "EB-4: Special immigrants (religious, broadcasters, etc.)",
-  "EB-4 Certain Religious Workers": "EB-4 Certain Religious Workers: Non-profit religious organization workers",
+  "EB-4 Certain Religious Workers":
+    "EB-4 Certain Religious Workers: Non-profit religious organization workers",
   "EB-5 Unreserved": "EB-5 Unreserved: Immigrant investors (general category)",
   "EB-5 Set Aside Rural": "EB-5 Rural: Set-aside visas for rural area investments",
-  "EB-5 Set Aside High Unemployment": "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
+  "EB-5 Set Aside High Unemployment":
+    "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
   "EB-5 Set Aside Infrastructure": "EB-5 Infrastructure: Set-aside for infrastructure projects",
 };
 
@@ -219,11 +248,23 @@ export function formatCutoffForDisplay(language: Language, cutoff: Cutoff): stri
     case "unavailable":
       return translate(language, "cutoffUnavailable");
     case "date":
-      return cutoff.iso ?? cutoff.raw;
+      if (!cutoff.iso) return cutoff.raw;
+      return formatIsoDate(language, cutoff.iso);
     case "unknown":
     default:
       return translate(language, "cutoffUnknown");
   }
+}
+
+function formatIsoDate(language: Language, iso: string): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat(DATE_LOCALES[language], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
 }
 
 /**
@@ -287,12 +328,78 @@ function parseCutoff(value: string): Cutoff {
   };
 }
 
-async function fetchFirst<T>(paths: string[]): Promise<T> {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isVisaGroup(value: unknown): value is VisaGroup {
+  return value === "family" || value === "employment" || value === "unknown";
+}
+
+function isManifestMonth(value: unknown): value is ManifestMonth {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.key === "string" &&
+    tryParseBulletinKey(value.key) !== null &&
+    typeof value.label === "string" &&
+    typeof value.path === "string" &&
+    typeof value.url === "string"
+  );
+}
+
+function parseManifest(value: unknown): Manifest {
+  if (!isRecord(value) || value.schemaVersion !== 1 || !Array.isArray(value.months)) {
+    throw new Error("Unsupported manifest format");
+  }
+  if (
+    typeof value.generatedAt !== "string" ||
+    typeof value.start !== "string" ||
+    typeof value.end !== "string" ||
+    tryParseBulletinKey(value.start) === null ||
+    tryParseBulletinKey(value.end) === null ||
+    !value.months.every(isManifestMonth)
+  ) {
+    throw new Error("Invalid manifest data");
+  }
+  return value as unknown as Manifest;
+}
+
+function isAreaRecord(value: unknown): value is Record<AreaKey, string> {
+  if (!isRecord(value)) return false;
+  return AREA_ORDER.every((area) => typeof value[area] === "string");
+}
+
+function isMonthCacheRow(value: unknown): value is MonthCacheRow {
+  if (!isRecord(value)) return false;
+  return (
+    isVisaGroup(value.group) && typeof value.category === "string" && isAreaRecord(value.areas)
+  );
+}
+
+function parseMonthCache(value: unknown, path: string): MonthCache {
+  if (!isRecord(value) || value.schemaVersion !== 1 || !Array.isArray(value.rows)) {
+    throw new Error(`Unsupported cache format: ${path}`);
+  }
+  if (
+    typeof value.bulletinMonth !== "string" ||
+    typeof value.bulletinYear !== "number" ||
+    typeof value.bulletinLabel !== "string" ||
+    typeof value.bulletinKey !== "string" ||
+    tryParseBulletinKey(value.bulletinKey) === null ||
+    typeof value.url !== "string" ||
+    !value.rows.every(isMonthCacheRow)
+  ) {
+    throw new Error(`Invalid cache data: ${path}`);
+  }
+  return value as unknown as MonthCache;
+}
+
+async function fetchFirst(paths: string[]): Promise<unknown> {
   const failures: string[] = [];
   for (const path of paths) {
     try {
       const response = await fetch(path);
-      if (response.ok) return (await response.json()) as T;
+      if (response.ok) return await response.json();
       failures.push(`${path} -> ${response.status}`);
     } catch (error) {
       failures.push(`${path} -> ${error instanceof Error ? error.message : String(error)}`);
@@ -319,10 +426,12 @@ export function rowsFromMonth(cache: MonthCache): VisaRow[] {
 }
 
 export async function loadVisaData(): Promise<VisaData> {
-  const manifest = await fetchFirst<Manifest>(["data/manifest.json", "/data/manifest.json"]);
+  const manifest = parseManifest(await fetchFirst(["data/manifest.json", "/data/manifest.json"]));
   const monthCaches = await Promise.all(
     manifest.months.map((month) =>
-      fetchFirst<MonthCache>([`data/${month.path}`, `/data/${month.path}`])
+      fetchFirst([`data/${month.path}`, `/data/${month.path}`]).then((value) =>
+        parseMonthCache(value, month.path)
+      )
     )
   );
   return {
