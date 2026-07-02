@@ -1,0 +1,8 @@
+# Visa Bulletin Dashboard
+
+This static dashboard helps users explore cached U.S. Visa Bulletin final action date movement by visa category, country or chargeability area, and bulletin month.
+
+## Links
+
+- [Dashboard](https://aatng-gh.github.io/visa-bulletin-dashboard/)
+- [Project README](https://github.com/aatng-gh/visa-bulletin-dashboard#readme)
