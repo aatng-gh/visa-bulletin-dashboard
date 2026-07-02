@@ -1,6 +1,7 @@
 import Chart from "chart.js/auto";
 import { useEffect, useMemo, useRef } from "react";
 import {
+  AREA_ORDER,
   AREA_SHORT_LABELS,
   Language,
   localizedBulletinShortLabel,
@@ -10,25 +11,27 @@ import {
 } from "../lib/visa";
 import { isDarkMode, type ThemeMode } from "../lib/theme";
 
-const colors = [
-  "#2563eb",
-  "#16a34a",
-  "#9333ea",
-  "#dc2626",
-  "#ea580c",
-  "#0891b2",
-  "#4f46e5",
-  "#be123c",
-  "#0f766e",
-  "#a16207",
-  "#7c3aed",
-  "#15803d",
-];
+const countryColors: Record<string, string> = {
+  all_chargeability: "#2563eb",
+  china: "#16a34a",
+  india: "#dc2626",
+  mexico: "#9333ea",
+  philippines: "#ea580c",
+};
 
-const LEGEND_SERIES_LIMIT = 12;
+const dashPatterns = [[], [6, 4], [2, 4], [8, 3, 2, 3], [12, 4]] as const;
 
-function colorForIndex(index: number): string {
-  return colors[index] ?? `hsl(${(index * 137.508) % 360} 70% 42%)`;
+function colorForCountry(country: string): string {
+  return countryColors[country] ?? "#4f46e5";
+}
+
+function dashForIndex(index: number): number[] {
+  return [...dashPatterns[index % dashPatterns.length]];
+}
+
+function splitSeriesKey(seriesKey: string) {
+  const [category, country] = seriesKey.split("|");
+  return { category, country };
 }
 
 interface VisaChartProps {
@@ -47,6 +50,12 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
     [rows]
   );
   const hasDateCutoffs = rowsWithDateCutoffs.length > 0;
+  const nonDateRows = rows.length - rowsWithDateCutoffs.length;
+  const seriesKeys = useMemo(
+    () => [...new Set(rows.map((row) => `${row.category}|${row.country}`))].sort(),
+    [rows]
+  );
+  const pointRadius = activeBulletins.length <= 24 ? 2 : 0;
 
   useEffect(() => {
     if (!canvasRef.current || chartRef.current) return;
@@ -61,14 +70,7 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
         layout: { padding: { top: 4, right: 8, bottom: 4, left: 8 } },
         plugins: {
           title: { display: true, text: "" },
-          legend: {
-            position: "bottom",
-            labels: {
-              boxHeight: 10,
-              boxWidth: 18,
-              usePointStyle: true,
-            },
-          },
+          legend: { display: false },
           tooltip: {
             callbacks: {
               label: (ctx) => `${ctx.dataset.label}: ${ordinalToIso(ctx.parsed.y)}`,
@@ -105,14 +107,11 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
-    const seriesKeys = [
-      ...new Set(rowsWithDateCutoffs.map((row) => `${row.category}|${row.country}`)),
-    ].sort();
     chart.data.labels = activeBulletins.map((bulletin) =>
       localizedBulletinShortLabel(language, bulletin)
     );
     chart.data.datasets = seriesKeys.map((seriesKey, index) => {
-      const [category, country] = seriesKey.split("|");
+      const { category, country } = splitSeriesKey(seriesKey);
       const pointsByBulletin = new Map(
         rowsWithDateCutoffs
           .filter((row) => row.category === category && row.country === country)
@@ -123,18 +122,17 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
           AREA_SHORT_LABELS[language][country as keyof typeof AREA_SHORT_LABELS.en] ?? country
         }`,
         data: activeBulletins.map((bulletin) => pointsByBulletin.get(bulletin.key) ?? null),
-        borderColor: colorForIndex(index),
-        backgroundColor: colorForIndex(index),
+        borderColor: colorForCountry(country),
+        backgroundColor: colorForCountry(country),
+        borderDash: dashForIndex(index),
         borderWidth: 2,
-        pointRadius: 0,
+        pointRadius,
         pointHoverRadius: 4,
-        spanGaps: true,
-        tension: 0.15,
+        spanGaps: false,
+        stepped: true,
+        tension: 0,
       };
     });
-    if (chart.options.plugins?.legend) {
-      chart.options.plugins.legend.display = seriesKeys.length <= LEGEND_SERIES_LIMIT;
-    }
     if (chart.options.plugins?.title) {
       chart.options.plugins.title.text = t("chartTitle");
     }
@@ -193,14 +191,50 @@ export function VisaChart({ activeBulletins, rows, language, themeMode, t }: Vis
     }
 
     chart.update();
-  }, [activeBulletins, language, rowsWithDateCutoffs, t, themeMode]);
+  }, [activeBulletins, language, pointRadius, rowsWithDateCutoffs, seriesKeys, t, themeMode]);
 
   return (
-    <div className="relative h-[560px] rounded-xl border bg-card p-4 shadow">
-      <canvas ref={canvasRef} className={hasDateCutoffs ? undefined : "hidden"} />
-      {!hasDateCutoffs && (
-        <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
-          {rows.length === 0 ? t("noDataSelected") : t("noChartData")}
+    <div className="min-w-0 rounded-xl border bg-card p-4 shadow">
+      <div className="relative h-[520px]">
+        <canvas
+          ref={canvasRef}
+          className={hasDateCutoffs ? "h-full w-full max-w-full" : "hidden"}
+          aria-label={t("chartAriaLabel")}
+        />
+        {!hasDateCutoffs && (
+          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-muted-foreground">
+            {rows.length === 0 ? t("noDataSelected") : t("noChartData")}
+          </div>
+        )}
+      </div>
+      {nonDateRows > 0 && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {t("chartNonDateNote", { rows: String(nonDateRows) })}
+        </p>
+      )}
+      {seriesKeys.length > 0 && (
+        <div className="mt-4 max-h-28 overflow-auto border-t pt-3" aria-label={t("chartLegend")}>
+          <div className="grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-3">
+            {seriesKeys.map((seriesKey, index) => {
+              const { category, country } = splitSeriesKey(seriesKey);
+              const label = `${category} / ${
+                AREA_SHORT_LABELS[language][country as (typeof AREA_ORDER)[number]] ?? country
+              }`;
+              return (
+                <div key={seriesKey} className="flex min-w-0 items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="h-0 w-8 flex-shrink-0 border-t-2"
+                    style={{
+                      borderColor: colorForCountry(country),
+                      borderStyle: dashForIndex(index).length > 0 ? "dashed" : "solid",
+                    }}
+                  />
+                  <span className="truncate">{label}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
