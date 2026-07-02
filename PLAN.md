@@ -36,7 +36,7 @@ Default fetch range:
 Adjustable fetch range:
 
 ```bash
-pnpm data -- --start 2025-01 --end 2026-06
+nub run data -- --start 2025-01 --end 2026-06
 ```
 
 Dates use `YYYY-MM`.
@@ -75,18 +75,17 @@ Rules:
 ## Commands
 
 ```bash
-pnpm install
-pnpm dev
-pnpm data
-pnpm data -- --start 2025-06 --end 2026-06
-pnpm check
-pnpm build
-pnpm preview
+nub install
+nub run dev
+nub run data
+nub run data -- --start 2025-06 --end 2026-06
+nub run check
+nub run build
+nub run preview
 ```
 
-`pnpm data` fetches missing data (requires **Node.js >= 26** for native
-TypeScript execution via `--experimental-strip-types`). `pnpm build` only
-builds the Vite/React dashboard to `dist/`.
+`nub run data` fetches missing data through Nub's TypeScript file runner.
+`nub run build` only builds the Vite/React dashboard to `dist/`.
 
 ## GitHub Pages
 
@@ -99,7 +98,7 @@ dist/index.html
 For local development, run:
 
 ```bash
-pnpm dev
+nub run dev
 ```
 
 Then open:
@@ -159,7 +158,7 @@ Monthly workflow:
 .github/workflows/monthly-build.yml
 ```
 
-It installs with pnpm, runs checks, fetches missing data, builds the React
+It installs with Nub, restores a data cache, runs checks, fetches missing data, builds the React
 dashboard, creates a Pages artifact containing `dist/` and generated
 `data/*.json`, then deploys to GitHub Pages. It does not commit generated data
 to the repo.

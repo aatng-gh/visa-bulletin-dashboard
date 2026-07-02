@@ -15,33 +15,34 @@ A modern, statically built React dashboard for exploring U.S. Visa Bulletin data
 ## Quick Start
 
 ```bash
-pnpm install
-pnpm dev
+nub install
+nub run dev
 ```
 
 Open http://localhost:8000/
 
 ## Available Scripts
 
-| Command              | Description |
-|----------------------|-------------|
-| `pnpm dev`           | Start Vite dev server |
-| `pnpm build`         | Build for production (`dist/`) |
-| `pnpm preview`       | Preview production build |
-| `pnpm data`          | Fetch/update visa bulletin JSON data |
-| `pnpm data -- --start 2025-01 --end 2025-06` | Fetch specific date range |
-| `pnpm check`         | Type check + lint |
-| `pnpm format`        | Format with Prettier |
+| Command                                         | Description                          |
+| ----------------------------------------------- | ------------------------------------ |
+| `nub run dev`                                   | Start Vite dev server                |
+| `nub run build`                                 | Build for production (`dist/`)       |
+| `nub run preview`                               | Preview production build             |
+| `nub run data`                                  | Fetch/update visa bulletin JSON data |
+| `nub run data -- --start 2025-01 --end 2025-06` | Fetch specific date range            |
+| `nub run check`                                 | Type check + lint                    |
+| `nub run format`                                | Format with Prettier                 |
 
-> **Note:** `pnpm data` requires Node.js >= 26 (uses native TypeScript support).
+> **Note:** Install Nub from https://nubjs.com/ before running these commands.
 
 ## Data
 
 The dashboard consumes pre-generated JSON files located in `data/`.
 
-Run `pnpm data` (or with `--start` / `--end`) to fetch the latest bulletins from the U.S. Department of State.
+Run `nub run data` (or with `--start` / `--end`) to fetch the latest bulletins from the U.S. Department of State.
 
 See [PLAN.md](./PLAN.md) for:
+
 - Detailed architecture
 - Data source & fiscal year rules
 - File naming conventions
