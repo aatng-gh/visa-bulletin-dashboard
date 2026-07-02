@@ -34,6 +34,7 @@ export default {
     cachedRange: "Dữ liệu đã lưu: từ {start} đến {end}. Cập nhật {generated}.",
     loadErrorTitle: "Không thể tải dữ liệu",
     loadErrorHelp: "Hãy chạy tác vụ tải dữ liệu và mở dashboard qua HTTP.",
+    retry: "Thử lại",
     family: "gia đình",
     employment: "việc làm",
     unknown: "không rõ",
@@ -43,6 +44,14 @@ export default {
     dark: "Tối",
     system: "Hệ thống",
     themeLabel: "Chủ đề",
+    startMonth: "Tháng bắt đầu",
+    startYear: "Năm bắt đầu",
+    endMonth: "Tháng kết thúc",
+    endYear: "Năm kết thúc",
+    chartAriaLabel: "Biểu đồ đường thể hiện ngày ưu tiên theo thời gian",
+    chartLegend: "Chú giải biểu đồ",
+    chartNonDateNote:
+      "{rows} dòng đã chọn là Đang hiệu lực, Không khả dụng, Không rõ, hoặc thiếu ngày nên không được nối trên biểu đồ.",
     // Date formatting polish
     cutoffCurrent: "Đang hiệu lực",
     cutoffUnavailable: "Không khả dụng",
@@ -59,18 +68,23 @@ export default {
     noneEmployment: "Bỏ chọn tất cả diện việc làm",
     tooltipF1: "Diện gia đình ưu tiên 1: Con trai/con gái chưa kết hôn của công dân Mỹ",
     tooltipF2A: "Diện gia đình ưu tiên 2A: Vợ/chồng và con chưa thành niên của thường trú nhân",
-    tooltipF2B: "Diện gia đình ưu tiên 2B: Con trai/con gái chưa kết hôn (từ 21t) của thường trú nhân",
+    tooltipF2B:
+      "Diện gia đình ưu tiên 2B: Con trai/con gái chưa kết hôn (từ 21t) của thường trú nhân",
     tooltipF3: "Diện gia đình ưu tiên 3: Con trai/con gái đã kết hôn của công dân Mỹ",
     tooltipF4: "Diện gia đình ưu tiên 4: Anh chị em ruột của công dân Mỹ (và gia đình họ)",
-    tooltipEB1: "EB-1: Lao động ưu tiên (khả năng phi thường, giáo sư xuất sắc, giám đốc đa quốc gia)",
+    tooltipEB1:
+      "EB-1: Lao động ưu tiên (khả năng phi thường, giáo sư xuất sắc, giám đốc đa quốc gia)",
     tooltipEB2: "EB-2: Chuyên gia có bằng cấp cao hoặc khả năng đặc biệt",
     tooltipEB3: "EB-3: Lao động lành nghề, chuyên gia và lao động khác",
-    tooltipEB3OtherWorkers: "EB-3 Lao động khác: Công việc yêu cầu ít hơn 2 năm đào tạo/kinh nghiệm",
+    tooltipEB3OtherWorkers:
+      "EB-3 Lao động khác: Công việc yêu cầu ít hơn 2 năm đào tạo/kinh nghiệm",
     tooltipEB4: "EB-4: Di dân đặc biệt (tôn giáo, phát thanh, v.v.)",
-    tooltipEB4CertainReligiousWorkers: "EB-4 Một số nhân viên tôn giáo: Nhân viên tổ chức tôn giáo phi lợi nhuận",
+    tooltipEB4CertainReligiousWorkers:
+      "EB-4 Một số nhân viên tôn giáo: Nhân viên tổ chức tôn giáo phi lợi nhuận",
     tooltipEB5Unreserved: "EB-5 Không phân bổ: Nhà đầu tư di cư (hạng mục chung)",
     tooltipEB5SetAsideRural: "EB-5 Nông thôn: Visa dành riêng cho đầu tư khu vực nông thôn",
-    tooltipEB5SetAsideHighUnemployment: "EB-5 Thất nghiệp cao: Visa dành cho khu vực thất nghiệp cao mục tiêu",
+    tooltipEB5SetAsideHighUnemployment:
+      "EB-5 Thất nghiệp cao: Visa dành cho khu vực thất nghiệp cao mục tiêu",
     tooltipEB5SetAsideInfrastructure: "EB-5 Hạ tầng: Visa dành cho dự án hạ tầng",
   },
   areaLabels: {

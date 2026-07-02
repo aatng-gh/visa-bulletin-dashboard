@@ -34,6 +34,7 @@ export default {
     cachedRange: "Cached range: {start} through {end}. Generated {generated}.",
     loadErrorTitle: "Unable to load data",
     loadErrorHelp: "Run the data fetch task and serve this dashboard over HTTP.",
+    retry: "Retry",
     family: "family",
     employment: "employment",
     unknown: "unknown",
@@ -43,6 +44,14 @@ export default {
     dark: "Dark",
     system: "System",
     themeLabel: "Theme",
+    startMonth: "Start month",
+    startYear: "Start year",
+    endMonth: "End month",
+    endYear: "End year",
+    chartAriaLabel: "Line chart of visa bulletin final action cutoff dates over time",
+    chartLegend: "Chart legend",
+    chartNonDateNote:
+      "{rows} selected rows are Current, Unavailable, Unknown, or missing a date and are not connected on the chart.",
     // Date formatting polish
     cutoffCurrent: "Current",
     cutoffUnavailable: "Unavailable",
@@ -62,15 +71,18 @@ export default {
     tooltipF2B: "Family 2nd Pref (F2B): Unmarried sons/daughters (21+) of permanent residents",
     tooltipF3: "Family 3rd Preference: Married sons/daughters of U.S. citizens",
     tooltipF4: "Family 4th Preference: Siblings of U.S. citizens (and their families)",
-    tooltipEB1: "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
+    tooltipEB1:
+      "EB-1: Priority workers (extraordinary ability, outstanding professors, multinational executives)",
     tooltipEB2: "EB-2: Advanced degree professionals or exceptional ability",
     tooltipEB3: "EB-3: Skilled workers, professionals & other workers",
     tooltipEB3OtherWorkers: "EB-3 Other Workers: Jobs requiring <2 years training/experience",
     tooltipEB4: "EB-4: Special immigrants (religious, broadcasters, etc.)",
-    tooltipEB4CertainReligiousWorkers: "EB-4 Certain Religious Workers: Non-profit religious organization workers",
+    tooltipEB4CertainReligiousWorkers:
+      "EB-4 Certain Religious Workers: Non-profit religious organization workers",
     tooltipEB5Unreserved: "EB-5 Unreserved: Immigrant investors (general category)",
     tooltipEB5SetAsideRural: "EB-5 Rural: Set-aside visas for rural area investments",
-    tooltipEB5SetAsideHighUnemployment: "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
+    tooltipEB5SetAsideHighUnemployment:
+      "EB-5 High Unemployment: Set-aside for targeted high-unemployment areas",
     tooltipEB5SetAsideInfrastructure: "EB-5 Infrastructure: Set-aside for infrastructure projects",
   },
   areaLabels: {

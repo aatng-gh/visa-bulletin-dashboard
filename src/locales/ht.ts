@@ -34,6 +34,7 @@ export default {
     cachedRange: "Entèval ki nan kach: {start} rive {end}. Jenere {generated}.",
     loadErrorTitle: "Pa ka chaje done yo",
     loadErrorHelp: "Kouri travay pou rale done yo epi sèvi dashboard la sou HTTP.",
+    retry: "Eseye ankò",
     family: "fanmi",
     employment: "travay",
     unknown: "enkoni",
@@ -43,6 +44,14 @@ export default {
     dark: "Somb",
     system: "Sistèm",
     themeLabel: "Tèm",
+    startMonth: "Mwa kòmansman",
+    startYear: "Ane kòmansman",
+    endMonth: "Mwa fen",
+    endYear: "Ane fen",
+    chartAriaLabel: "Graf liy pou dat limit aksyon final bilten viza sou tan",
+    chartLegend: "Lejand graf",
+    chartNonDateNote:
+      "{rows} liy chwazi yo se Kouran, Pa disponib, Enkoni, oswa san dat; yo pa konekte sou graf la.",
     // Date formatting polish
     cutoffCurrent: "Kouran",
     cutoffUnavailable: "Pa disponib",
@@ -62,12 +71,15 @@ export default {
     tooltipF2B: "Preferans Fanmi 2B: Pitit gason/pitit fi ki pa marye (21+) rezidan pèmanan yo",
     tooltipF3: "Preferans Fanmi 3: Pitit gason/pitit fi ki marye nan sitwayen ameriken yo",
     tooltipF4: "Preferans Fanmi 4: Frè ak sè nan sitwayen ameriken yo (ak fanmi yo)",
-    tooltipEB1: "EB-1: Travayè priyorite (kapasite ekstraòdinè, pwofesè distenge, ekzekitif multinasyonal)",
+    tooltipEB1:
+      "EB-1: Travayè priyorite (kapasite ekstraòdinè, pwofesè distenge, ekzekitif multinasyonal)",
     tooltipEB2: "EB-2: Pwofesyonèl ak diplòm avanse oswa kapasite eksepsyonèl",
     tooltipEB3: "EB-3: Travayè kalifye, pwofesyonèl ak lòt travayè",
-    tooltipEB3OtherWorkers: "EB-3 Lòt Travayè: Travay ki mande mwens pase 2 ane fòmasyon/eksperyans",
+    tooltipEB3OtherWorkers:
+      "EB-3 Lòt Travayè: Travay ki mande mwens pase 2 ane fòmasyon/eksperyans",
     tooltipEB4: "EB-4: Imigran espesyal (religye, emisyon, elatriye)",
-    tooltipEB4CertainReligiousWorkers: "EB-4 Sèten Travayè Religye: Travayè òganizasyon relijye ki pa gen pwofi",
+    tooltipEB4CertainReligiousWorkers:
+      "EB-4 Sèten Travayè Religye: Travayè òganizasyon relijye ki pa gen pwofi",
     tooltipEB5Unreserved: "EB-5 San Rezèv: Envestisè imigran (kategori jeneral)",
     tooltipEB5SetAsideRural: "EB-5 Zòn Riral: Visa rezève pou envestisman nan zòn riral yo",
     tooltipEB5SetAsideHighUnemployment: "EB-5 Segondè Chomaj: Visa pou zòn ki gen gwo chomaj vize",
