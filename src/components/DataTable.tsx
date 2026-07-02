@@ -1,4 +1,10 @@
-import { AREA_LABELS, formatCutoffForDisplay, getCategoryDisplayName, Language, VisaRow } from "../lib/visa";
+import {
+  AREA_LABELS,
+  formatCutoffForDisplay,
+  getCategoryDisplayName,
+  Language,
+  VisaRow,
+} from "../lib/visa";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 interface DataTableProps {
@@ -10,8 +16,8 @@ interface DataTableProps {
 
 export function DataTable(props: DataTableProps) {
   return (
-    <div className="max-h-[650px] overflow-auto rounded-md border">
-      <Table>
+    <div className="max-h-[650px] w-full max-w-full overflow-auto rounded-md border">
+      <Table className="min-w-[760px]">
         <TableHeader className="sticky top-0 z-10 bg-muted">
           <TableRow>
             <TableHead>{props.t("tableBulletin")}</TableHead>
@@ -30,7 +36,7 @@ export function DataTable(props: DataTableProps) {
             </TableRow>
           ) : (
             props.rows.map((row) => (
-              <TableRow key={`${row.bulletinKey}-${row.category}-${row.country}`}>
+              <TableRow key={`${row.bulletinKey}-${row.group}-${row.category}-${row.country}`}>
                 <TableCell>
                   <a href={row.url}>{props.bulletinLabel(row.bulletinKey)}</a>
                 </TableCell>

@@ -22,11 +22,9 @@ export function Tooltip({ content, children, className, id }: TooltipProps) {
       <div
         id={id}
         role="tooltip"
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-full right-full mr-1.5 z-50 mb-1.5 w-max max-w-[14rem] rounded-md bg-popover px-2.5 py-1 text-xs leading-snug text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 motion-reduce:transition-none break-words"
+        className="pointer-events-none absolute bottom-full right-0 z-50 mb-1.5 w-max max-w-[14rem] break-words rounded-md bg-popover px-2.5 py-1 text-xs leading-snug text-popover-foreground opacity-0 shadow-md transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 motion-reduce:transition-none"
       >
         {content}
-        {/* Arrow pointing right toward the ? icon */}
         <span className="absolute -bottom-1 -right-[5px] h-0 w-0 border-[5px] border-transparent border-l-popover" />
       </div>
     </div>
