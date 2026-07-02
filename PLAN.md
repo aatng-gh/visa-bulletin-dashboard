@@ -119,7 +119,7 @@ data/{YYYY-MM}.json
 - Chart and data table on the left
 - Filter panel on the right
 - Dynamic language dropdown with flags
-- Persisted filter panel state via browser local storage
+- Filter state is driven by URL parameters (shareable + back/forward) with localStorage fallback for defaults
 - Dynamic month-year start/end selectors
 - Visa category checkboxes
 - Country/chargeability checkboxes

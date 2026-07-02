@@ -48,6 +48,122 @@ function readStoredFilterState(): StoredFilterState {
   }
 }
 
+function readUrlFilters(): Partial<StoredFilterState> {
+  if (typeof window === "undefined") return {};
+  const params = new URLSearchParams(window.location.search);
+  const result: Partial<StoredFilterState> = {};
+  const start = params.get("start");
+  const end = params.get("end");
+  const cats = params.get("cats");
+  const countries = params.get("countries") ?? params.get("co");
+
+  if (start) result.start = start;
+  if (end) result.end = end;
+  if (cats) {
+    result.categories = cats
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  if (countries) {
+    result.countries = countries
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return result;
+}
+
+function hasUrlFilterParams(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.has("start") ||
+    params.has("end") ||
+    params.has("cats") ||
+    params.has("countries") ||
+    params.has("co")
+  );
+}
+
+function syncToUrl(
+  start: string,
+  end: string,
+  categories: Set<string>,
+  countries: Set<string>
+) {
+  if (typeof window === "undefined") return;
+
+  const params = new URLSearchParams();
+
+  if (start) params.set("start", start);
+  if (end) params.set("end", end);
+
+  const catArr = [...categories];
+  const isDefaultCats = catArr.length === 1 && catArr[0] === "F2B";
+  if (!isDefaultCats && catArr.length > 0) {
+    params.set("cats", catArr.join(","));
+  }
+
+  const countryArr = [...countries];
+  const isAllCountries =
+    countryArr.length === AREA_ORDER.length &&
+    AREA_ORDER.every((c) => countryArr.includes(c));
+  if (!isAllCountries && countryArr.length > 0) {
+    params.set("countries", countryArr.join(","));
+  }
+
+  const search = params.toString();
+  const newUrl = search
+    ? `${window.location.pathname}?${search}`
+    : window.location.pathname;
+
+  window.history.replaceState(null, "", newUrl);
+}
+
+function computeFiltersFromSource(
+  source: Partial<StoredFilterState>,
+  data: VisaData,
+  categories: string[]
+): {
+  start: string;
+  end: string;
+  categories: Set<string>;
+  countries: Set<string>;
+} {
+  const bulletinKeys = new Set(data.bulletins.map((b) => b.key));
+  const catSet = new Set(categories);
+  const countrySet = new Set(AREA_ORDER);
+
+  const nextStart =
+    typeof source.start === "string" && bulletinKeys.has(source.start)
+      ? source.start
+      : (data.bulletins[0]?.key ?? "");
+  const nextEnd =
+    typeof source.end === "string" && bulletinKeys.has(source.end)
+      ? source.end
+      : (data.bulletins.at(-1)?.key ?? "");
+
+  const nextCats =
+    Array.isArray(source.categories) && source.categories.length > 0
+      ? source.categories.filter((c) => catSet.has(c))
+      : categories.filter((c) => c === "F2B");
+
+  const nextCountries =
+    Array.isArray(source.countries) && source.countries.length > 0
+      ? source.countries.filter((c) =>
+          countrySet.has(c as (typeof AREA_ORDER)[number])
+        )
+      : AREA_ORDER;
+
+  return {
+    start: nextStart,
+    end: nextEnd,
+    categories: new Set(nextCats),
+    countries: new Set(nextCountries),
+  };
+}
+
 function readLanguage(): Language {
   const stored = localStorage.getItem("language");
   return isLanguage(stored) ? stored : "en";
@@ -100,39 +216,32 @@ export function App() {
   );
 
   useEffect(() => {
-    if (!data || start || end) return;
-    const stored = readStoredFilterState();
-    const bulletinKeys = new Set(data.bulletins.map((bulletin) => bulletin.key));
-    const categorySet = new Set(categories);
-    const countrySet = new Set(AREA_ORDER);
+    if (!data || (start && end)) return;
 
-    setStart(
-      typeof stored.start === "string" && bulletinKeys.has(stored.start)
-        ? stored.start
-        : (data.bulletins[0]?.key ?? "")
-    );
-    setEnd(
-      typeof stored.end === "string" && bulletinKeys.has(stored.end)
-        ? stored.end
-        : (data.bulletins.at(-1)?.key ?? "")
-    );
-    setSelectedCategories(
-      new Set(
-        Array.isArray(stored.categories)
-          ? stored.categories.filter((category) => categorySet.has(category))
-          : categories.filter((category) => category === "F2B")
-      )
-    );
-    setSelectedCountries(
-      new Set(
-        Array.isArray(stored.countries)
-          ? stored.countries.filter((country) =>
-              countrySet.has(country as (typeof AREA_ORDER)[number])
-            )
-          : AREA_ORDER
-      )
-    );
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps -- deliberate: only run on data arrival; guard prevents re-init; including start/end/categories would cause the exact anti-pattern the prior version had
+    const urlFilters = readUrlFilters();
+    const source = hasUrlFilterParams() ? urlFilters : readStoredFilterState();
+    const computed = computeFiltersFromSource(source, data, categories);
+
+    setStart(computed.start);
+    setEnd(computed.end);
+    setSelectedCategories(computed.categories);
+    setSelectedCountries(computed.countries);
+  }, [data, categories]); // eslint-disable-line react-hooks/exhaustive-deps -- only on data/categories; guard + URL priority handled inside
+
+  // Handle browser back/forward navigation (URL is source of truth on popstate)
+  useEffect(() => {
+    function handlePopState() {
+      if (!data) return;
+      const urlFilters = readUrlFilters();
+      const computed = computeFiltersFromSource(urlFilters, data, categories);
+      setStart(computed.start);
+      setEnd(computed.end);
+      setSelectedCategories(computed.categories);
+      setSelectedCountries(computed.countries);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [data, categories]);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -159,6 +268,8 @@ export function App() {
 
   useEffect(() => {
     if (!data || !start || !end) return;
+
+    // Persist to localStorage (for default experience when no URL params)
     localStorage.setItem(
       FILTER_STATE_KEY,
       JSON.stringify({
@@ -168,6 +279,9 @@ export function App() {
         countries: [...selectedCountries],
       })
     );
+
+    // Sync current filter state into the URL (enables shareable links)
+    syncToUrl(start, end, selectedCategories, selectedCountries);
   }, [data, end, selectedCategories, selectedCountries, start]);
 
   const activeBulletins = useMemo(() => {

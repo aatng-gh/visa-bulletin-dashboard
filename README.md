@@ -8,7 +8,7 @@ A modern, statically built React dashboard for exploring U.S. Visa Bulletin data
 
 - Client-side filtering, sorting, and Chart.js visualization
 - Full 3-language support (English, Vietnamese, Haitian Creole)
-- Persisted filter state in localStorage
+- Filters via URL params (shareable links) + localStorage fallback
 - Dynamic month/year range selection
 - Fully static export suitable for GitHub Pages
 
