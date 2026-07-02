@@ -6,7 +6,6 @@ import { Select } from "./components/ui/select";
 import { VisaChart } from "./components/VisaChart";
 import {
   AREA_ORDER,
-  bulletinKey,
   categorySortKey,
   formatGeneratedAt,
   isLanguage,
@@ -14,8 +13,6 @@ import {
   Language,
   loadVisaData,
   localizedBulletinLabel,
-  manifestMonthFromKey,
-  monthRange,
   translate,
   VisaData,
 } from "./lib/visa";
@@ -30,13 +27,21 @@ interface StoredFilterState {
   countries?: string[];
 }
 
-
-
 function readStoredFilterState(): StoredFilterState {
   const raw = localStorage.getItem(FILTER_STATE_KEY);
   if (!raw) return {};
   try {
-    return JSON.parse(raw) as StoredFilterState;
+    const parsed = JSON.parse(raw) as StoredFilterState;
+    return {
+      start: typeof parsed.start === "string" ? parsed.start : undefined,
+      end: typeof parsed.end === "string" ? parsed.end : undefined,
+      categories: Array.isArray(parsed.categories)
+        ? parsed.categories.filter((category): category is string => typeof category === "string")
+        : undefined,
+      countries: Array.isArray(parsed.countries)
+        ? parsed.countries.filter((country): country is string => typeof country === "string")
+        : undefined,
+    };
   } catch {
     localStorage.removeItem(FILTER_STATE_KEY);
     return {};
@@ -58,8 +63,9 @@ export function App() {
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedCountries, setSelectedCountries] = useState<Set<string>>(new Set(AREA_ORDER));
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     let cancelled = false;
+    setDataError(null);
     void loadVisaData()
       .then((loaded) => {
         if (!cancelled) setData(loaded);
@@ -73,6 +79,8 @@ export function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => fetchData(), [fetchData]);
 
   const t = useCallback(
     (key: string, params?: Record<string, string>) => translate(language, key, params),
@@ -162,10 +170,12 @@ export function App() {
     );
   }, [data, end, selectedCategories, selectedCountries, start]);
 
-  const activeBulletins = useMemo(
-    () => monthRange(start, end).map((monthYear) => manifestMonthFromKey(bulletinKey(monthYear))),
-    [end, start]
-  );
+  const activeBulletins = useMemo(() => {
+    if (!data || !start || !end) return [];
+    const first = start <= end ? start : end;
+    const last = start <= end ? end : start;
+    return data.bulletins.filter((bulletin) => bulletin.key >= first && bulletin.key <= last);
+  }, [data, end, start]);
 
   const filteredRows = useMemo(() => {
     if (!data) return [];
@@ -241,11 +251,13 @@ export function App() {
             variant="outline"
             size="default"
             onClick={cycleTheme}
-            aria-label={t("themeLabel")}
+            aria-label={`${t("theme")}: ${t(themeMode)}`}
             title={`${t("theme")}: ${t(themeMode)}`}
             className="flex h-9 items-center gap-1.5 px-2.5 py-0 text-sm"
           >
-            <span aria-hidden="true" className="text-base leading-none">{themeIcon(themeMode)}</span>
+            <span aria-hidden="true" className="text-base leading-none">
+              {themeIcon(themeMode)}
+            </span>
             <span className="text-xs font-medium capitalize">{t(themeMode)}</span>
           </Button>
           <div className="w-full sm:w-52">
@@ -254,6 +266,7 @@ export function App() {
             </label>
             <Select
               id="language-select"
+              name="language"
               value={language}
               aria-label={t("languageLabel")}
               onChange={(event) => setLanguage(event.currentTarget.value as Language)}
@@ -273,14 +286,40 @@ export function App() {
           <h2 className="font-semibold">{t("loadErrorTitle")}</h2>
           <p>{dataError.message}</p>
           <p>{t("loadErrorHelp")}</p>
+          <Button type="button" variant="outline" className="mt-3" onClick={fetchData}>
+            {t("retry")}
+          </Button>
         </section>
       )}
 
-      {!data ? (
+      {!data && !dataError ? (
         <p className="text-muted-foreground">{t("loading")}</p>
-      ) : (
+      ) : data && (!start || !end) ? (
+        <p className="text-muted-foreground">{t("loading")}</p>
+      ) : data ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-          <main className="space-y-6">
+          <FilterPanel
+            className="order-1 lg:sticky lg:top-4 lg:order-2"
+            language={language}
+            start={start}
+            setStart={setStart}
+            end={end}
+            setEnd={setEnd}
+            availableBulletins={data.bulletins}
+            categories={categories}
+            selectedCategories={selectedCategories}
+            setAllCategories={(checked) =>
+              setSelectedCategories(new Set(checked ? categories : []))
+            }
+            toggleCategory={toggleCategory}
+            selectedCountries={selectedCountries}
+            setAllCountries={(checked) => setSelectedCountries(new Set(checked ? AREA_ORDER : []))}
+            toggleCountry={toggleCountry}
+            rowsCount={filteredRows.length}
+            linesCount={seriesKeys.length}
+            t={t}
+          />
+          <main className="order-2 min-w-0 space-y-6 lg:order-1">
             <VisaChart
               activeBulletins={activeBulletins}
               rows={filteredRows}
@@ -298,27 +337,8 @@ export function App() {
               />
             </section>
           </main>
-          <FilterPanel
-            language={language}
-            start={start}
-            setStart={setStart}
-            end={end}
-            setEnd={setEnd}
-            categories={categories}
-            selectedCategories={selectedCategories}
-            setAllCategories={(checked) =>
-              setSelectedCategories(new Set(checked ? categories : []))
-            }
-            toggleCategory={toggleCategory}
-            selectedCountries={selectedCountries}
-            setAllCountries={(checked) => setSelectedCountries(new Set(checked ? AREA_ORDER : []))}
-            toggleCountry={toggleCountry}
-            rowsCount={filteredRows.length}
-            linesCount={seriesKeys.length}
-            t={t}
-          />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
